@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Carrinho — Moto Peças</title>
+<meta name="description" content="Seu carrinho de peças e acessórios.">
+<meta name="theme-color" content="#FFD200">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/app.css">
+<link rel="stylesheet" href="assets/css/art.css">
+</head>
+<body data-pagina="carrinho">
+
+<div id="topo"></div>
+
+<main id="conteudo">
+  <section class="pagina-topo">
+    <div class="container">
+      <nav class="migalhas" aria-label="Você está aqui">
+        <a href="index.html">Início</a> <span aria-hidden="true">/</span> <span>Carrinho</span>
+      </nav>
+      <h1>Seu carrinho</h1>
+      <p class="texto-2 mb-0" id="resumo-topo">Confira os itens antes de fechar o pedido.</p>
+    </div>
+  </section>
+
+  <section class="secao">
+    <div class="container">
+      <div id="carrinho-container"></div>
+    </div>
+  </section>
+</main>
+
+<div id="rodape"></div>
+
+<script type="module">
+  import { montarShell } from './assets/js/shell.js';
+  import { montarCarrinho } from './assets/js/pagina-carrinho.js';
+
+  montarShell({ pagina: 'carrinho', raiz: '.' });
+  montarCarrinho();
+</script>
+
+</body>
+</html>

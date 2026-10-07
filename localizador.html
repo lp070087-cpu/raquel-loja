@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Encontre a peça certa para sua moto — Moto Peças</title>
+<meta name="description" content="Escolha marca, modelo e ano da sua moto e veja apenas as peças que servem nela.">
+<meta name="theme-color" content="#FFD200">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/app.css">
+<link rel="stylesheet" href="assets/css/art.css">
+</head>
+<body data-pagina="localizador">
+
+<div id="topo"></div>
+
+<main id="conteudo">
+
+  <section class="pagina-topo">
+    <div class="container">
+      <nav class="migalhas" aria-label="Você está aqui">
+        <a href="index.html">Início</a> <span aria-hidden="true">/</span> <span>Encontre sua peça</span>
+      </nav>
+      <h1>Encontre a peça certa para sua moto</h1>
+      <p class="texto-2 mb-0">Três escolhas e o catálogo se ajusta sozinho. Sem decorar código de peça.</p>
+    </div>
+  </section>
+
+  <section class="secao">
+    <div class="container">
+      <div id="localizador-container"></div>
+
+      <div class="grade grade--3 mt-4" id="vantagens"></div>
+    </div>
+  </section>
+
+  <section class="secao secao--cinza">
+    <div class="container">
+      <div class="cabecalho-secao cabecalho-secao--centro revelar">
+        <span class="selo">Mais buscados</span>
+        <h2 class="mt-2">Peças que saem todo dia</h2>
+        <p>Se você já sabe o que precisa, dá para ir direto ao produto.</p>
+      </div>
+      <div id="grade-populares"></div>
+    </div>
+  </section>
+
+</main>
+
+<div id="rodape"></div>
+
+<script type="module">
+  import { montarShell } from './assets/js/shell.js';
+  import { montarLocalizador } from './assets/js/pagina-localizador.js';
+
+  montarShell({ pagina: 'localizador', raiz: '.' });
+  montarLocalizador();
+</script>
+
+</body>
+</html>

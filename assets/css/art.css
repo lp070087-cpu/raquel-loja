@@ -1,0 +1,194 @@
+/* ============================================================================
+   FOTOS — como as fotos reais dos produtos se acomodam na tela
+   ----------------------------------------------------------------------------
+   As fotos vieram de tamanhos e recortes diferentes, quase todas com fundo
+   branco. Em vez de recortar cada arquivo (perderia nitidez e daria trabalho
+   a cada foto nova), a foto é acomodada numa caixa clara e o ajuste fino de
+   enquadramento sai de variáveis (--foto-zoom, --foto-y) definidas por produto
+   em assets/js/artes.js.
+
+   Assim: foto nova = nenhuma alteração aqui.
+   ============================================================================ */
+
+.foto-produto {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;                     /* nunca corta a peça */
+  object-position: center var(--foto-y, center);
+  transform: scale(var(--foto-zoom, 1));
+  transform-origin: center;
+  display: block;
+  /* mistura com o fundo claro da caixa: o branco da foto some no branco do card */
+  mix-blend-mode: multiply;
+  transition: transform 480ms cubic-bezier(.22,.61,.36,1);
+}
+
+/* nas miniaturas o multiplicativo some com o fundo cinza: usa contain simples */
+.foto-produto--mini {
+  mix-blend-mode: normal;
+  transform: none;
+}
+
+/* vazio discreto — só para produto cadastrado sem foto */
+.foto-vazia {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(135deg, var(--fundo-2) 25%, transparent 25%) 0 0 / 18px 18px,
+    linear-gradient(315deg, var(--fundo-2) 25%, transparent 25%) 0 0 / 18px 18px,
+    var(--branco);
+}
+
+/* --------------------------------------------------------- fundo da foto -- */
+/* Caixa clara atrás do produto: deixa a peça "flutuando" e mantém o card
+   limpo, sem a borda da imagem aparecendo. */
+.caixa-foto {
+  position: relative;
+  background: var(--branco);
+  overflow: hidden;
+}
+.caixa-foto::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 46%;
+  background: linear-gradient(to top, rgba(12,20,37,.045), transparent);
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------- HERO — palco --- */
+/* A área amarela orgânica da direita é o elemento gráfico da referência. */
+.palco__area-amarela {
+  position: absolute;
+  inset: 5% -6% 2% 6%;
+  border-radius: 52% 48% 44% 56% / 46% 52% 48% 54%;
+  background:
+    radial-gradient(120% 110% at 68% 26%, var(--amarelo-claro) 0%, var(--amarelo) 58%, var(--amarelo-forte) 100%);
+  box-shadow: var(--sombra-3);
+  animation: respirar 11s ease-in-out infinite;
+}
+
+@keyframes respirar {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50%      { transform: scale(1.022) rotate(-1.1deg); }
+}
+
+/* brilho dourado girando devagar atrás do produto — dá profundidade */
+.palco__brilho {
+  position: absolute;
+  inset: 16%;
+  border-radius: 50%;
+  background:
+    conic-gradient(from 0deg,
+      rgba(255,255,255,.55) 0deg, transparent 70deg,
+      rgba(255,255,255,.35) 150deg, transparent 235deg,
+      rgba(255,255,255,.5) 300deg, transparent 360deg);
+  filter: blur(26px);
+  animation: girar 34s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes girar { to { transform: rotate(360deg); } }
+
+.palco__itens { position: absolute; inset: 0; }
+
+.palco__item {
+  position: absolute;
+  inset: 9%;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transform: translate3d(34px, 20px, 0) scale(.9) rotate(-3deg);
+  transition:
+    opacity 640ms cubic-bezier(.22,.61,.36,1),
+    transform 640ms cubic-bezier(.22,.61,.36,1);
+  will-change: opacity, transform;
+}
+
+.palco__item--ativo {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+  animation: flutuar 6s ease-in-out infinite 0.6s;
+}
+
+.palco__item--saindo {
+  opacity: 0;
+  transform: translate3d(-30px, -18px, 0) scale(.92) rotate(2.5deg);
+}
+
+.palco__item img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  /* a foto do banner tem fundo branco: o multiply funde com o amarelo */
+  mix-blend-mode: multiply;
+  filter: drop-shadow(0 22px 30px rgba(12,20,37,.18));
+}
+
+/* flutuação mínima: 8px, sem chamar atenção */
+@keyframes flutuar {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
+  50%      { transform: translate3d(0, -8px, 0) scale(1.012) rotate(-.7deg); }
+}
+
+.palco__selo {
+  position: absolute;
+  top: 4%; right: 0;
+  display: inline-flex; align-items: center; gap: .5em;
+  background: var(--marinho); color: var(--branco);
+  border-radius: var(--raio-pill); padding: 9px 16px;
+  font-size: var(--t-micro); font-weight: 800;
+  text-transform: uppercase; letter-spacing: .08em;
+  box-shadow: var(--sombra-2);
+}
+.palco__selo-ponto {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--amarelo);
+  animation: pulsar 1.9s ease-in-out infinite;
+}
+@keyframes pulsar { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.65); } }
+
+.palco__etiqueta {
+  position: absolute;
+  left: -2%; bottom: 7%;
+  display: flex; align-items: center; gap: 13px;
+  background: var(--branco); border-radius: var(--raio);
+  box-shadow: var(--sombra-2); padding: 13px 20px 13px 13px;
+  animation: flutuar 5.6s ease-in-out infinite;
+}
+.palco__etiqueta-simbolo {
+  width: 40px; height: 40px; border-radius: 11px; flex: none;
+  background: var(--marinho); color: var(--amarelo);
+  display: grid; place-items: center;
+}
+.palco__etiqueta-simbolo svg { width: 21px; height: 21px; }
+.palco__etiqueta-texto { display: flex; flex-direction: column; line-height: 1.25; }
+.palco__etiqueta-rotulo {
+  font-size: var(--t-micro); text-transform: uppercase;
+  letter-spacing: .09em; color: var(--texto-3); font-weight: 700;
+}
+.palco__etiqueta-valor {
+  font-weight: 800; font-family: var(--fonte-titulo); font-size: 1.1rem; color: var(--marinho);
+}
+
+.palco__pontos {
+  position: absolute; right: -2%; bottom: 34%;
+  display: flex; flex-direction: column; gap: 9px;
+}
+.palco__ponto {
+  width: 10px; height: 10px; border-radius: 50%;
+  border: none; padding: 0; background: rgba(12,20,37,.22);
+  transition: background-color var(--transicao), transform var(--transicao);
+}
+.palco__ponto:hover { background: rgba(12,20,37,.45); }
+.palco__ponto[aria-current="true"] { background: var(--marinho); transform: scale(1.4); }
+
+/* Sem movimento: nada de flutuar, girar ou pulsar. */
+@media (prefers-reduced-motion: reduce) {
+  .palco__area-amarela,
+  .palco__brilho,
+  .palco__item--ativo,
+  .palco__etiqueta,
+  .palco__selo-ponto { animation: none !important; }
+  .palco__item { transition: none !important; }
+}

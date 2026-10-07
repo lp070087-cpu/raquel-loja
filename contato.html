@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contato — Moto Peças</title>
+<meta name="description" content="Fale com a loja, veja o endereço e o horário de funcionamento.">
+<meta name="theme-color" content="#FFD200">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/app.css">
+<link rel="stylesheet" href="assets/css/art.css">
+</head>
+<body data-pagina="contato">
+
+<div id="topo"></div>
+
+<main id="conteudo">
+  <section class="pagina-topo">
+    <div class="container">
+      <nav class="migalhas" aria-label="Você está aqui">
+        <a href="index.html">Início</a> <span aria-hidden="true">/</span> <span>Contato</span>
+      </nav>
+      <h1>Fale com a loja</h1>
+      <p class="texto-2 mb-0">Manda o modelo e o ano da sua moto que a gente confirma a peça.</p>
+    </div>
+  </section>
+
+  <section class="secao">
+    <div class="container">
+      <div id="contato-container"></div>
+    </div>
+  </section>
+</main>
+
+<div id="rodape"></div>
+
+<script type="module">
+  import { montarShell } from './assets/js/shell.js';
+  import { montarContato } from './assets/js/pagina-contato.js';
+
+  montarShell({ pagina: 'contato', raiz: '.' });
+  montarContato();
+</script>
+
+</body>
+</html>

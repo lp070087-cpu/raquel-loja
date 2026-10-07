@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pedido — Moto Peças</title>
+<meta name="description" content="Seu pedido foi registrado. Veja o código de retirada ou os dados da entrega.">
+<meta name="theme-color" content="#FFD200">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/app.css">
+<link rel="stylesheet" href="assets/css/art.css">
+</head>
+<body data-pagina="pedido">
+
+<div id="topo"></div>
+
+<main id="conteudo">
+  <section class="secao">
+    <div class="container">
+      <div id="pedido-container"></div>
+    </div>
+  </section>
+</main>
+
+<div id="rodape"></div>
+
+<script type="module">
+  import { montarShell } from './assets/js/shell.js';
+  import { montarPedido } from './assets/js/pagina-pedido.js';
+
+  montarShell({ pagina: 'pedido', raiz: '.' });
+  montarPedido();
+</script>
+
+</body>
+</html>

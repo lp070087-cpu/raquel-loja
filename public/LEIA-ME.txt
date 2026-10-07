@@ -1,0 +1,75 @@
+FOTOS DO SITE
+==================================================
+
+As fotos vieram da pasta `public/` do projeto (as suas imagens originais) e
+foram copiadas para cá com nome limpo. O mapeamento foi:
+
+   public/oleo/                                -> public/produtos/oleos/
+   public/filtro de oleo/                      -> public/produtos/filtros/
+   public/disco de freio/                      -> public/produtos/freios/
+   public/pastilha de freio/                   -> public/produtos/freios/
+   public/tração de moto com e sem retentor/   -> public/produtos/transmissao/
+   public/pneu/                                -> public/produtos/pneus/
+   public/capacete/                            -> public/produtos/capacetes/
+   public/capa de chuva/                       -> public/produtos/capas/
+   public/imagem de referencia para animação
+     do banner/                                -> public/banner/
+
+As originais continuam intactas na pasta `public/` de `raquel-loja/`.
+Nada foi apagado nem sobrescrito.
+
+COMO TROCAR UMA FOTO
+-------------------
+Troque o arquivo mantendo o MESMO NOME. Nada mais precisa ser feito.
+Ex.: substituir `public/produtos/pneus/pneu-01.jpg` por uma foto melhor da
+mesma peça — o site inteiro (card, página do produto, carrinho, pedido, admin)
+passa a mostrar a nova automaticamente.
+
+COMO ACRESCENTAR UM PRODUTO NOVO
+--------------------------------
+1) Copie a foto para a pasta da categoria, ex.:
+       public/produtos/freios/pastilha-04.jpg
+
+2) Abra `assets/js/dados.js` e acrescente um produto na lista PRODUTOS:
+
+       {
+         id: 'pastilha-nova',
+         nome: 'Pastilha de Freio Nova',
+         categoria: 'freios',
+         marca: 'Cobreq',
+         sku: 'FR-PAST-NOVA',
+         preco: 59.9,
+         precoDe: 69.9,
+         custo: 34,
+         estoque: 20,
+         estoqueMinimo: 8,
+         foto: 'public/produtos/freios/pastilha-04.jpg',   // <- aqui
+         descricao: '...',
+         especificacoes: { Posição: 'Dianteira' },
+         compat: [ { marca: 'Honda', modelo: 'CG 160', de: 2016, ate: 2026 } ],
+       }
+
+3) Pronto. Ele aparece no catálogo, na busca e no admin.
+
+GALERIA (mais de uma foto da MESMA peça)
+----------------------------------------
+Acrescente o campo `fotos` com a lista. A página do produto mostra as
+miniaturas e o cliente troca a foto grande clicando.
+
+       foto:  'public/produtos/freios/pastilha-01.jpg',
+       fotos: [
+         'public/produtos/freios/pastilha-01.jpg',
+         'public/produtos/freios/pastilha-02.jpg',
+       ],
+
+ENQUADRAMENTO
+-------------
+As fotos têm recortes diferentes. O ajuste fino de zoom e posição fica em
+`assets/js/artes.js`, na lista AJUSTE — uma linha por foto. É o único lugar
+onde enquadramento é mexido.
+
+RECOMENDAÇÕES DE IMAGEM
+-----------------------
+- Formato: JPG ou WebP. Fundo claro e neutro combina com o layout.
+- Proporção: quadrada (ex.: 800 x 800 px) é a que melhor se acomoda.
+- Evite marca d'água de outro site ou texto promocional embutido na foto.

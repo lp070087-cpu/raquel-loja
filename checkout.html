@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checkout — Moto Peças</title>
+<meta name="description" content="Finalize seu pedido: retirada na loja ou entrega para todo o Brasil.">
+<meta name="theme-color" content="#FFD200">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/app.css">
+<link rel="stylesheet" href="assets/css/art.css">
+</head>
+<body data-pagina="checkout">
+
+<div id="topo"></div>
+
+<main id="conteudo">
+  <section class="pagina-topo">
+    <div class="container">
+      <nav class="migalhas" aria-label="Você está aqui">
+        <a href="index.html">Início</a> <span aria-hidden="true">/</span>
+        <a href="carrinho.html">Carrinho</a> <span aria-hidden="true">/</span> <span>Checkout</span>
+      </nav>
+      <h1>Finalizar pedido</h1>
+      <p class="texto-2 mb-0">Preencha seus dados e escolha como quer receber.</p>
+    </div>
+  </section>
+
+  <section class="secao">
+    <div class="container">
+      <div id="checkout-container"></div>
+    </div>
+  </section>
+</main>
+
+<div id="rodape"></div>
+
+<script type="module">
+  import { montarShell } from './assets/js/shell.js';
+  import { montarCheckout } from './assets/js/pagina-checkout.js';
+
+  montarShell({ pagina: 'checkout', raiz: '.' });
+  montarCheckout();
+</script>
+
+</body>
+</html>

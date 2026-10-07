@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Produto — Moto Peças</title>
+<meta name="description" content="Detalhes da peça, compatibilidade com a sua moto e opção de retirada na loja.">
+<meta name="theme-color" content="#FFD200">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/app.css">
+<link rel="stylesheet" href="assets/css/art.css">
+</head>
+<body data-pagina="produto">
+
+<div id="topo"></div>
+
+<main id="conteudo">
+  <div class="container">
+    <nav class="migalhas mt-3" aria-label="Você está aqui" id="migalhas"></nav>
+    <div id="produto-container"></div>
+    <div id="relacionados"></div>
+  </div>
+</main>
+
+<div id="rodape"></div>
+
+<script type="module">
+  import { montarShell } from './assets/js/shell.js';
+  import { montarProduto } from './assets/js/pagina-produto.js';
+
+  montarShell({ pagina: 'pecas', raiz: '.' });
+  montarProduto();
+</script>
+
+</body>
+</html>

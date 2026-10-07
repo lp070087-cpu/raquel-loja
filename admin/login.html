@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel da loja — Moto Peças</title>
+<meta name="description" content="Acesso demonstrativo ao painel da loja.">
+<meta name="theme-color" content="#0B1526">
+<link rel="stylesheet" href="../assets/css/tokens.css">
+<link rel="stylesheet" href="../assets/css/app.css">
+<link rel="stylesheet" href="../assets/css/admin.css">
+</head>
+<body class="tela-admin">
+
+<div class="login-tela">
+  <div class="login-tela__formas" aria-hidden="true"><span></span><span></span></div>
+
+  <div class="login-caixa">
+    <div class="login-caixa__marca">
+      <a class="marca" href="../index.html">
+        <span class="marca__simbolo" id="simbolo-marca"></span>
+        <span class="marca__nome">Moto Peças</span>
+      </a>
+      <div>
+        <h1 style="font-size:1.5rem;margin-bottom:.2em">Painel da loja</h1>
+        <p class="texto-2 pequeno mb-0">Área da proprietária e da equipe do balcão.</p>
+      </div>
+    </div>
+
+    <form id="form-login" novalidate>
+      <div class="campo">
+        <label class="campo__rotulo" for="usuario">Usuário</label>
+        <input class="entrada" id="usuario" type="text" autocomplete="username" placeholder="admin" value="admin">
+      </div>
+      <div class="campo">
+        <label class="campo__rotulo" for="senha">Senha</label>
+        <input class="entrada" id="senha" type="password" autocomplete="current-password" placeholder="demo123" value="demo123">
+      </div>
+
+      <div id="erro-login"></div>
+
+      <button class="btn btn--grande btn--bloco mt-3" type="submit">Entrar no painel</button>
+    </form>
+
+    <div class="credencial-demo">
+      <strong>Acesso desta demonstração</strong>
+      Usuário: <code>admin</code> · Senha: <code>demo123</code><br>
+      Não é autenticação real: serve para mostrar as telas do painel.
+      Na versão final, o acesso é por login de verdade, com senha criptografada e permissões por perfil.
+    </div>
+
+    <p class="micro texto-3 centro mt-3 mb-0">
+      <a href="../index.html" style="text-decoration:underline">← Voltar para a loja</a>
+    </p>
+  </div>
+</div>
+
+<script type="module">
+  import { icone } from '../assets/js/utils.js';
+  import { ADMIN_DEMO } from '../assets/js/dados.js';
+  import { entrarAdmin, jaLogado } from '../assets/js/admin.js';
+
+  document.getElementById('simbolo-marca').innerHTML = icone('moto', 26);
+
+  // se já entrou nesta sessão, vai direto para o painel
+  if (jaLogado()) window.location.href = 'painel.html';
+
+  const form = document.getElementById('form-login');
+  const erro = document.getElementById('erro-login');
+
+  form.addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const u = document.getElementById('usuario').value.trim();
+    const s = document.getElementById('senha').value;
+
+    const r = entrarAdmin(u, s);
+    if (r.ok) {
+      window.location.href = 'painel.html';
+      return;
+    }
+
+    erro.innerHTML = `
+      <div class="mensagem mensagem--erro">
+        ${icone('alerta', 18)}
+        <span>${r.mensagem}</span>
+      </div>`;
+    document.getElementById('senha').style.borderColor = 'var(--erro)';
+  });
+
+  // atalho da demonstração: preenche e entra
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter' && ev.target.tagName !== 'BUTTON') form.requestSubmit();
+  });
+</script>
+
+</body>
+</html>

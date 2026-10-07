@@ -1,0 +1,121 @@
+/* ============================================================================
+   TOKENS — IDENTIDADE VISUAL
+   ----------------------------------------------------------------------------
+   Paleta MEDIDA na imagem "referencia de cores do site.jpg" (não estimada):
+       branco ....... 83% da imagem (fundo predominante)
+       amarelo ...... #FECA14 / #FDD31D  -> fixado em #FFD400
+       escuro ....... #131313 (quase preto, usado em TEXTO)
+   O azul-marinho da referência só aparece na logo; aqui ele entra como a cor
+   de texto/painel, que é o que dá o ar "premium automotivo" sem virar preto.
+
+   Trocar a identidade = trocar estes valores. Nada mais no site fixa cor.
+   ============================================================================ */
+
+/* ------------------------------------------------------------------ FONTE --
+   Poppins, embutida no projeto (assets/fontes/*.woff), reduzida do alfabeto
+   completo para o português: 152 KB -> 13 KB por peso.
+   É a família geométrica pesada mais próxima do desenho da referência.
+   Sem requisição externa: a apresentação abre offline.
+   -------------------------------------------------------------------------- */
+@font-face {
+  font-family: 'Poppins';
+  src: url('../fontes/poppins-400.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('../fontes/poppins-500.woff') format('woff');
+  font-weight: 500 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('../fontes/poppins-700.woff') format('woff');
+  font-weight: 700 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* ---- Cores ------------------------------------------------------------ */
+  --amarelo:          #FFD400;   /* amarelo vivo — medido na referência */
+  --amarelo-forte:    #F0C200;   /* hover, sombra interna */
+  --amarelo-claro:    #FFE45C;   /* áreas amarelas grandes */
+  --amarelo-suave:    #FFF7D1;   /* realce discreto */
+
+  --marinho:          #0C1425;   /* azul-marinho quase preto — texto forte */
+  --marinho-2:        #16203A;
+  --marinho-3:        #263253;
+
+  --branco:           #FFFFFF;
+  --fundo:            #FFFFFF;
+  --fundo-2:          #F6F7F9;
+  --fundo-3:          #EDEFF3;
+
+  --texto:            #0C1425;
+  --texto-2:          #5A6478;   /* 6,1:1 sobre branco */
+  --texto-3:          #79839A;   /* 4,6:1 sobre branco */
+  --texto-inv:        #FFFFFF;
+
+  --borda:            #E4E7EC;
+  --borda-forte:      #CBD2DD;
+
+  --ok:               #0A7A45;
+  --ok-fundo:         #E7F6EE;
+  --alerta:           #A85A05;
+  --alerta-fundo:     #FDF2E3;
+  --erro:             #C0271B;
+  --erro-fundo:       #FDECEA;
+
+  /* ---- Tipografia ------------------------------------------------------- */
+  --fonte: 'Poppins', 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
+  --fonte-titulo: 'Poppins', 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
+
+  --t-hero:    clamp(2.3rem, 5.9vw, 4.9rem);
+  --t-h1:      clamp(1.9rem, 4.2vw, 3.2rem);
+  --t-h2:      clamp(1.5rem, 3.1vw, 2.4rem);
+  --t-h3:      clamp(1.1rem, 1.7vw, 1.4rem);
+  --t-corpo:   1rem;
+  --t-pequeno: 0.875rem;
+  --t-micro:   0.75rem;
+
+  --peso-forte: 800;
+  --peso-medio: 600;
+  --peso-leve:  500;
+
+  /* ---- Forma ------------------------------------------------------------ */
+  --raio:        18px;
+  --raio-p:      12px;
+  --raio-g:      28px;
+  --raio-pill:   999px;
+
+  --sombra-1: 0 1px 2px rgba(12,20,37,.05), 0 2px 8px rgba(12,20,37,.05);
+  --sombra-2: 0 4px 14px rgba(12,20,37,.07), 0 12px 30px rgba(12,20,37,.06);
+  --sombra-3: 0 20px 50px rgba(12,20,37,.13);
+
+  --lateral: clamp(16px, 4vw, 64px);
+  --largura: 1280px;
+
+  --transicao: 220ms cubic-bezier(.22,.61,.36,1);
+  --header-h: 76px;
+}
+
+@media (max-width: 720px) {
+  :root { --header-h: 64px; }
+}
+
+/* Poppins tem entrelinha apertada para acentos em caixa alta. */
+h1, h2, h3, h4, .btn { padding-bottom: .04em; }
+
+/* Respeita quem pediu menos movimento no sistema operacional. */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel — Moto Peças</title>
+<meta name="description" content="Painel demonstrativo da loja: pedidos, produtos, estoque e compatibilidade.">
+<meta name="theme-color" content="#0B1526">
+<link rel="stylesheet" href="../assets/css/tokens.css">
+<link rel="stylesheet" href="../assets/css/app.css">
+<link rel="stylesheet" href="../assets/css/admin.css">
+</head>
+<body class="tela-admin">
+
+<div class="faixa-demo">
+  PAINEL DEMONSTRATIVO — pedidos, produtos e clientes são exemplos desta apresentação
+</div>
+
+<div class="admin">
+
+  <aside class="admin__lateral" id="admin-lateral">
+    <div class="admin__marca">
+      <span class="marca__simbolo" id="simbolo-admin"></span>
+      <span class="marca__texto">
+        <span class="marca__nome">Moto Peças</span>
+        <span class="marca__tag">Painel da loja</span>
+      </span>
+    </div>
+
+    <nav class="admin__menu" id="menu-admin" aria-label="Seções do painel"></nav>
+
+    <div class="admin__rodape">
+      <a href="../index.html">← Voltar para a loja</a>
+    </div>
+  </aside>
+
+  <main class="admin__principal">
+    <div class="admin__topo">
+      <div>
+        <h1 id="titulo-secao">Dashboard</h1>
+        <p id="subtitulo-secao">Resumo do movimento da loja.</p>
+      </div>
+      <div class="admin__usuario">
+        <span class="avaliacao__avatar" style="width:38px;height:38px">AD</span>
+        <span>
+          <span class="forte" style="display:block;font-size:.9rem">Administrador</span>
+          <span class="micro texto-3">Sessão demonstrativa</span>
+        </span>
+        <button class="link-simples" type="button" id="btn-sair">Sair</button>
+      </div>
+    </div>
+
+    <div id="conteudo-admin"></div>
+  </main>
+
+</div>
+
+<script type="module">
+  import { montarAdmin } from '../assets/js/admin.js';
+  montarAdmin();
+</script>
+
+</body>
+</html>

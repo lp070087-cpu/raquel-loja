@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Catálogo — Moto Peças</title>
+<meta name="description" content="Catálogo de peças e acessórios para moto: óleo, filtro, freio, transmissão, pneu, capacete e acessórios.">
+<meta name="theme-color" content="#FFD200">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/app.css">
+<link rel="stylesheet" href="assets/css/art.css">
+</head>
+<body data-pagina="catalogo">
+
+<div id="topo"></div>
+
+<main id="conteudo">
+
+  <section class="pagina-topo">
+    <div class="container">
+      <nav class="migalhas" aria-label="Você está aqui">
+        <a href="index.html">Início</a> <span aria-hidden="true">/</span> <span id="migalha-atual">Catálogo</span>
+      </nav>
+      <h1 id="titulo-pagina">Catálogo de peças</h1>
+      <p class="texto-2 mb-0" id="subtitulo-pagina">Peças e acessórios para a sua moto. Use os filtros ou o localizador para ver só o que serve.</p>
+    </div>
+  </section>
+
+  <section class="secao">
+    <div class="container">
+
+      <!-- Barra do localizador rápido -->
+      <div id="localizador-curto" class="mb-4"></div>
+
+      <!-- filtros ativos (chips) -->
+      <div class="filtros-ativos" id="filtros-ativos"></div>
+
+      <!-- aviso "sua moto" -->
+      <div id="aviso-moto"></div>
+
+      <button class="btn btn--contorno btn--bloco mb-3 filtros__toggle" type="button" data-abrir-filtros
+              aria-expanded="false" aria-controls="painel-filtros">
+        <span id="icone-filtros"></span> Filtros e ordenação
+      </button>
+
+      <div class="catalogo">
+        <aside class="filtros" id="painel-filtros" data-aberto="false" aria-label="Filtros">
+          <div class="filtros__cabecalho">
+            <strong>Filtros</strong>
+            <button class="filtros__limpar" type="button" data-limpar-filtros>Limpar tudo</button>
+          </div>
+
+          <div class="filtros__grupo">
+            <span class="filtros__titulo">Categoria</span>
+            <div class="filtros__opcoes" id="filtro-categoria"></div>
+          </div>
+
+          <div class="filtros__grupo">
+            <span class="filtros__titulo">Marca</span>
+            <div class="filtros__opcoes" id="filtro-marca"></div>
+          </div>
+
+          <div class="filtros__grupo">
+            <span class="filtros__titulo">Compatibilidade</span>
+            <div class="filtros__opcoes" id="filtro-compat"></div>
+          </div>
+
+          <div class="filtros__grupo">
+            <span class="filtros__titulo">Faixa de preço</span>
+            <div class="filtros__opcoes" id="filtro-preco"></div>
+          </div>
+
+          <div class="filtros__grupo">
+            <span class="filtros__titulo">Moto</span>
+            <div class="filtros__opcoes" id="filtro-moto"></div>
+          </div>
+
+          <button class="btn btn--contorno btn--bloco btn--pequeno filtros__toggle" type="button" data-fechar-filtros>
+            Aplicar e fechar
+          </button>
+        </aside>
+
+        <div>
+          <div class="barra-resultados">
+            <p class="barra-resultados__contagem" id="contagem" role="status"></p>
+            <div class="barra-resultados__ordenar">
+              <label class="campo__rotulo mb-0" for="ordenar">Ordenar</label>
+              <select class="entrada" id="ordenar">
+                <option value="relevancia">Mais relevantes</option>
+                <option value="menor">Menor preço</option>
+                <option value="maior">Maior preço</option>
+                <option value="nome">Nome (A–Z)</option>
+                <option value="novidades">Novidades</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="resultados"></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<div id="rodape"></div>
+
+<script type="module">
+  import { montarShell } from './assets/js/shell.js';
+  import { montarCatalogo } from './assets/js/pagina-catalogo.js';
+
+  montarShell({ pagina: 'pecas', raiz: '.' });
+  montarCatalogo();
+</script>
+
+</body>
+</html>
