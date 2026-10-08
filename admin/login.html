@@ -5,24 +5,28 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Painel da loja — Moto Peças</title>
 <meta name="description" content="Acesso demonstrativo ao painel da loja.">
-<meta name="theme-color" content="#0B1526">
+<meta name="theme-color" content="#0C1425">
 <link rel="stylesheet" href="../assets/css/tokens.css">
 <link rel="stylesheet" href="../assets/css/app.css">
 <link rel="stylesheet" href="../assets/css/admin.css">
 </head>
-<body class="tela-admin">
+<body class="tela-admin" data-raiz="..">
 
 <div class="login-tela">
   <div class="login-tela__formas" aria-hidden="true"><span></span><span></span></div>
 
   <div class="login-caixa">
-    <div class="login-caixa__marca">
-      <a class="marca" href="../index.html">
-        <span class="marca__simbolo" id="simbolo-marca"></span>
+    <a class="marca" href="../index.html" style="margin-bottom:var(--e6)">
+      <span class="marca__simbolo" id="simbolo-marca"></span>
+      <span class="marca__texto">
         <span class="marca__nome">Moto Peças</span>
-      </a>
+        <span class="marca__tag">Peças e acessórios</span>
+      </span>
+    </a>
+
+    <div class="login-caixa__marca">
       <div>
-        <h1 style="font-size:1.5rem;margin-bottom:.2em">Painel da loja</h1>
+        <h1 style="font-size:1.45rem;margin-bottom:.25em">Painel da loja</h1>
         <p class="texto-2 pequeno mb-0">Área da proprietária e da equipe do balcão.</p>
       </div>
     </div>
@@ -57,7 +61,6 @@
 
 <script type="module">
   import { icone } from '../assets/js/utils.js';
-  import { ADMIN_DEMO } from '../assets/js/dados.js';
   import { entrarAdmin, jaLogado } from '../assets/js/admin.js';
 
   document.getElementById('simbolo-marca').innerHTML = icone('moto', 26);
@@ -80,16 +83,11 @@
     }
 
     erro.innerHTML = `
-      <div class="mensagem mensagem--erro">
+      <div class="mensagem mensagem--erro mt-2">
         ${icone('alerta', 18)}
         <span>${r.mensagem}</span>
       </div>`;
     document.getElementById('senha').style.borderColor = 'var(--erro)';
-  });
-
-  // atalho da demonstração: preenche e entra
-  document.addEventListener('keydown', (ev) => {
-    if (ev.key === 'Enter' && ev.target.tagName !== 'BUTTON') form.requestSubmit();
   });
 </script>
 

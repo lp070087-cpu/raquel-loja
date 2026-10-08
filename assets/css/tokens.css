@@ -1,20 +1,24 @@
 /* ============================================================================
-   TOKENS — IDENTIDADE VISUAL
+   TOKENS — DIREÇÃO DE ARTE + SISTEMA DE ESPAÇO
    ----------------------------------------------------------------------------
-   Paleta MEDIDA na imagem "referencia de cores do site.jpg" (não estimada):
-       branco ....... 83% da imagem (fundo predominante)
-       amarelo ...... #FECA14 / #FDD31D  -> fixado em #FFD400
-       escuro ....... #131313 (quase preto, usado em TEXTO)
-   O azul-marinho da referência só aparece na logo; aqui ele entra como a cor
-   de texto/painel, que é o que dá o ar "premium automotivo" sem virar preto.
+   DUAS REFERÊNCIAS, DOIS PAPÉIS DIFERENTES:
 
-   Trocar a identidade = trocar estes valores. Nada mais no site fixa cor.
+   • `referencia de cores do site.jpg`  -> COR e DIREÇÃO DE ARTE
+       paleta medida (não estimada): 83% branco, amarelo #FECA14, escuro #131313.
+
+   • `site de referencia/` (vivence-joias) -> ARQUITETURA VISUAL E ACABAMENTO
+       container 1200px · seção com 8rem (128px) de respiro · cabeçalho de seção
+       com etiqueta + título + subtítulo e 4rem até a grade · grid de 4 com 1,5rem
+       de vão · card com borda, elevação de 5px e brilho varrendo no hover ·
+       header que muda ao rolar · tipografia em 3 níveis bem separados.
+
+   O resultado NÃO é cópia de nenhum dos dois: a estrutura vem do site de
+   referência, a cor vem da imagem, o conteúdo vem das fotos de public/.
    ============================================================================ */
 
 /* ------------------------------------------------------------------ FONTE --
    Poppins, embutida no projeto (assets/fontes/*.woff), reduzida do alfabeto
    completo para o português: 152 KB -> 13 KB por peso.
-   É a família geométrica pesada mais próxima do desenho da referência.
    Sem requisição externa: a apresentação abre offline.
    -------------------------------------------------------------------------- */
 @font-face {
@@ -40,77 +44,97 @@
 }
 
 :root {
-  /* ---- Cores ------------------------------------------------------------ */
-  --amarelo:          #FFD400;   /* amarelo vivo — medido na referência */
-  --amarelo-forte:    #F0C200;   /* hover, sombra interna */
-  --amarelo-claro:    #FFE45C;   /* áreas amarelas grandes */
-  --amarelo-suave:    #FFF7D1;   /* realce discreto */
+  /* ---- Cor -------------------------------------------------------------- */
+  --amarelo:        #FFD400;   /* medido na referência de cores */
+  --amarelo-forte:  #F0C200;
+  --amarelo-claro:  #FFE45C;
+  --amarelo-suave:  #FFF8D6;
 
-  --marinho:          #0C1425;   /* azul-marinho quase preto — texto forte */
-  --marinho-2:        #16203A;
-  --marinho-3:        #263253;
+  --marinho:        #0C1425;   /* texto forte / painel escuro */
+  --marinho-2:      #16203A;
+  --marinho-3:      #263253;
 
-  --branco:           #FFFFFF;
-  --fundo:            #FFFFFF;
-  --fundo-2:          #F6F7F9;
-  --fundo-3:          #EDEFF3;
+  --branco:         #FFFFFF;
+  --fundo:          #FFFFFF;
+  --fundo-2:        #F7F8FA;   /* seção alternada */
+  --fundo-3:        #EFF2F6;
 
-  --texto:            #0C1425;
-  --texto-2:          #5A6478;   /* 6,1:1 sobre branco */
-  --texto-3:          #79839A;   /* 4,6:1 sobre branco */
-  --texto-inv:        #FFFFFF;
+  --texto:          #0C1425;
+  --texto-2:        #5A6478;
+  --texto-3:        #8C94A6;
+  --texto-inv:      #FFFFFF;
 
-  --borda:            #E4E7EC;
-  --borda-forte:      #CBD2DD;
+  --borda:          #E6E9EE;
+  --borda-forte:    #D2D8E1;
 
-  --ok:               #0A7A45;
-  --ok-fundo:         #E7F6EE;
-  --alerta:           #A85A05;
-  --alerta-fundo:     #FDF2E3;
-  --erro:             #C0271B;
-  --erro-fundo:       #FDECEA;
+  --ok:             #0A7A45;
+  --ok-fundo:       #E8F6EF;
+  --alerta:         #A85A05;
+  --alerta-fundo:   #FDF3E4;
+  --erro:           #C0271B;
+  --erro-fundo:     #FDECEA;
 
   /* ---- Tipografia ------------------------------------------------------- */
   --fonte: 'Poppins', 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
-  --fonte-titulo: 'Poppins', 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
 
-  --t-hero:    clamp(2.3rem, 5.9vw, 4.9rem);
-  --t-h1:      clamp(1.9rem, 4.2vw, 3.2rem);
-  --t-h2:      clamp(1.5rem, 3.1vw, 2.4rem);
-  --t-h3:      clamp(1.1rem, 1.7vw, 1.4rem);
+  /* Três níveis, bem separados — nada de "tudo do mesmo tamanho". */
+  --t-display: clamp(2.4rem, 4.4vw, 3.9rem);   /* só o hero */
+  --t-h1:      clamp(1.9rem, 3.2vw, 2.9rem);   /* título de página */
+  --t-h2:      clamp(1.5rem, 2.4vw, 2.15rem);  /* título de seção */
+  --t-h3:      clamp(1.1rem, 1.4vw, 1.3rem);   /* título de card/bloco */
   --t-corpo:   1rem;
   --t-pequeno: 0.875rem;
-  --t-micro:   0.75rem;
+  --t-micro:   0.72rem;
 
   --peso-forte: 800;
   --peso-medio: 600;
-  --peso-leve:  500;
+  --peso-leve:  400;
+
+  --altura-linha-titulo: 1.12;
+  --altura-linha-texto:  1.68;
+
+  /* ---- Espaço: a espinha do ritmo vertical ------------------------------ */
+  /* Um único degrau de respiro entre seções. Era isto que faltava: sem um
+     valor declarado, cada seção inventava o seu e a página ficava "grudada". */
+  --secao-y:      clamp(56px, 6.5vw, 104px);   /* respiro vertical de seção */
+  --secao-titulo: clamp(28px, 3vw, 48px);      /* do título até a grade */
+
+  --e1: 4px;  --e2: 8px;  --e3: 12px;  --e4: 16px;
+  --e5: 20px; --e6: 24px; --e7: 32px;  --e8: 40px;
+  --e9: 48px; --e10: 64px; --e11: 80px;
+
+  /* ---- Container -------------------------------------------------------- */
+  /* 1240px: fica entre os 1200 da referência e o topo da faixa pedida, e
+     acomoda 4 cards de ~280px com vão de 24px sem apertar. */
+  --largura:    1240px;
+  --lateral:    clamp(16px, 4.2vw, 40px);
 
   /* ---- Forma ------------------------------------------------------------ */
-  --raio:        18px;
-  --raio-p:      12px;
-  --raio-g:      28px;
-  --raio-pill:   999px;
+  --raio-p:    10px;
+  --raio:      14px;
+  --raio-g:    20px;
+  --raio-pill: 999px;
 
-  --sombra-1: 0 1px 2px rgba(12,20,37,.05), 0 2px 8px rgba(12,20,37,.05);
-  --sombra-2: 0 4px 14px rgba(12,20,37,.07), 0 12px 30px rgba(12,20,37,.06);
-  --sombra-3: 0 20px 50px rgba(12,20,37,.13);
+  --sombra-1: 0 1px 2px rgba(12,20,37,.05);
+  --sombra-2: 0 6px 20px rgba(12,20,37,.07);
+  --sombra-3: 0 18px 44px rgba(12,20,37,.12);
 
-  --lateral: clamp(16px, 4vw, 64px);
-  --largura: 1280px;
+  /* ---- Movimento (medido na referência) --------------------------------- */
+  --transicao-lenta:  600ms cubic-bezier(.4,0,.2,1);
+  --transicao-media:  300ms cubic-bezier(.4,0,.2,1);
+  --transicao-rapida: 150ms ease-in-out;
 
-  --transicao: 220ms cubic-bezier(.22,.61,.36,1);
-  --header-h: 76px;
+  --header-h: 72px;
+  --topo-h:   38px;
 }
 
-@media (max-width: 720px) {
-  :root { --header-h: 64px; }
+@media (max-width: 900px) {
+  :root { --header-h: 64px; --topo-h: 0px; }
 }
 
-/* Poppins tem entrelinha apertada para acentos em caixa alta. */
-h1, h2, h3, h4, .btn { padding-bottom: .04em; }
+/* Poppins corta acento em caixa alta com entrelinha apertada. */
+h1, h2, h3, h4, .btn, .titulo-secao { padding-bottom: .05em; }
 
-/* Respeita quem pediu menos movimento no sistema operacional. */
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {
     animation-duration: .001ms !important;

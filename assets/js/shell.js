@@ -4,25 +4,18 @@
    Existe UMA descrição do header e UMA do footer. Toda página chama
    `montarShell()`. Mudar o menu em um lugar muda o site inteiro.
 
-   Uso numa página:
-     <body data-pagina="catalogo">
-       <div id="topo"></div>
-       ... conteúdo ...
-       <div id="rodape"></div>
-       <script type="module">
-         import { montarShell } from './assets/js/shell.js';
-         montarShell({ pagina: 'catalogo', raiz: '.' });
-       </script>
+   O cabeçalho carrega a MOTO ATIVA: depois que a cliente escolhe a moto, ela
+   aparece aqui em todas as páginas, com "Trocar moto" a um clique.
    ============================================================================ */
 
 import { LOJA } from './dados.js';
 import { icone, esc, $, $$, avisar } from './utils.js';
-import { carrinho } from './carrinho.js';
+import { carrinho, moto as motoStore } from './carrinho.js';
+import { htmlMotoHeader, htmlMotoAtiva } from './localizador.js';
 
 export const MENU = [
   { id: 'inicio',      rotulo: 'Início',            href: 'index.html' },
   { id: 'pecas',       rotulo: 'Peças',             href: 'catalogo.html' },
-  // Acessórios é um agrupamento de capacetes + capas (ver AGRUPAMENTOS em dados.js)
   { id: 'acessorios',  rotulo: 'Acessórios',        href: 'catalogo.html?categoria=capacetes,capas' },
   { id: 'localizador', rotulo: 'Encontre sua peça', href: 'localizador.html' },
   { id: 'ofertas',     rotulo: 'Ofertas',           href: 'catalogo.html?ofertas=1' },
@@ -30,29 +23,31 @@ export const MENU = [
 ];
 
 /* Caminho relativo até a raiz, conforme a página esteja na raiz ou em /admin. */
-function prefixo(raiz) {
+export function prefixo(raiz) {
   return raiz === '..' ? '../' : '';
 }
 
 /* ------------------------------------------------------------- cabeçalho -- */
 function htmlHeader(pagina, raiz) {
   const p = prefixo(raiz);
+  const moto = motoStore.ler();
+
   const links = MENU.map(
-    (m) =>
-      `<a class="nav__link" href="${p}${m.href}"${
-        m.id === pagina ? ' aria-current="page"' : ''
-      }>${m.rotulo}</a>`
+    (m) => `<a class="nav__link" href="${p}${m.href}"${
+      m.id === pagina ? ' aria-current="page"' : ''
+    }>${m.rotulo}</a>`
   ).join('');
 
   return `
-<div class="faixa-topo">
+<div class="topo">
   <div class="container">
-    <div class="faixa-topo__itens">
-      <span class="faixa-topo__item">${icone('caminhao', 15)} Envio para todo o Brasil</span>
-      <span class="faixa-topo__item">${icone('loja', 15)} Retirada na loja em ${esc(LOJA.cidade)}</span>
+    <div class="topo__itens">
+      <span class="topo__item">${icone('caminhao', 14)} Envio para todo o Brasil</span>
+      <span class="topo__item">${icone('loja', 14)} Retire na loja em ${esc(LOJA.cidade)}</span>
     </div>
-    <div class="faixa-topo__itens">
-      <a class="faixa-topo__item" href="https://wa.me/${LOJA.whatsapp}" target="_blank" rel="noopener">${icone('telefone', 15)} ${esc(LOJA.whatsappExibicao)}</a>
+    <div class="topo__itens">
+      <a class="topo__item" href="${p}localizador.html">${icone('moto', 14)} Peças para a sua moto</a>
+      <a class="topo__item" href="https://wa.me/${LOJA.whatsapp}" target="_blank" rel="noopener">${icone('telefone', 14)} ${esc(LOJA.whatsappExibicao)}</a>
     </div>
   </div>
 </div>
@@ -60,7 +55,7 @@ function htmlHeader(pagina, raiz) {
 <header class="header" id="cabecalho">
   <div class="container">
     <a class="marca" href="${p}index.html" aria-label="${esc(LOJA.nome)} — página inicial">
-      <span class="marca__simbolo">${icone('moto', 26)}</span>
+      <span class="marca__simbolo">${icone('moto', 23)}</span>
       <span class="marca__texto">
         <span class="marca__nome">${esc(LOJA.nome)}</span>
         <span class="marca__tag">Peças e acessórios</span>
@@ -70,6 +65,7 @@ function htmlHeader(pagina, raiz) {
     <nav class="nav" aria-label="Menu principal">${links}</nav>
 
     <div class="acoes-topo">
+      <span data-moto-header>${htmlMotoHeader(moto)}</span>
       <button class="icone-btn" type="button" data-abrir-busca aria-label="Buscar peças">${icone('buscar')}</button>
       <a class="icone-btn" href="${p}conta.html" aria-label="Minha conta">${icone('conta')}</a>
       <a class="icone-btn" href="${p}carrinho.html" aria-label="Carrinho">
@@ -82,11 +78,11 @@ function htmlHeader(pagina, raiz) {
   </div>
 
   <div class="oculto" id="busca-topo">
-    <div class="container" style="padding-block:12px">
+    <div class="container" style="padding-block:14px">
       <form class="linha" data-form-busca role="search">
         <label class="oculto" for="busca-input">Buscar peças</label>
         <input class="entrada" id="busca-input" type="search" placeholder="Busque por peça, marca ou moto. Ex.: pastilha CG 160" autocomplete="off">
-        <button class="btn" type="submit">${icone('buscar', 18)} Buscar</button>
+        <button class="btn" type="submit">${icone('buscar', 17)} Buscar</button>
       </form>
     </div>
   </div>
@@ -95,22 +91,23 @@ function htmlHeader(pagina, raiz) {
 <div class="menu-mobile" id="menu-mobile" data-aberto="false" aria-hidden="true">
   <div class="menu-mobile__topo">
     <a class="marca" href="${p}index.html">
-      <span class="marca__simbolo">${icone('moto', 26)}</span>
+      <span class="marca__simbolo">${icone('moto', 23)}</span>
       <span class="marca__nome">${esc(LOJA.nome)}</span>
     </a>
     <button class="icone-btn" type="button" data-fechar-menu aria-label="Fechar menu">${icone('fechar')}</button>
   </div>
-  <nav class="menu-mobile__links" aria-label="Menu principal (celular)">
+
+  <div data-moto-header>${htmlMotoHeader(moto)}</div>
+
+  <nav class="menu-mobile__links mt-3" aria-label="Menu principal (celular)">
     ${MENU.map((m) => `<a class="menu-mobile__link" href="${p}${m.href}">${m.rotulo}</a>`).join('')}
     <a class="menu-mobile__link" href="${p}conta.html">Minha conta</a>
     <a class="menu-mobile__link" href="${p}admin/login.html">Painel da loja</a>
   </nav>
+
   <div class="menu-mobile__rodape">
     <a class="btn btn--bloco" href="${p}localizador.html">${icone('moto', 18)} Encontrar minha peça</a>
     <a class="btn btn--contorno btn--bloco" href="${p}carrinho.html">${icone('carrinho', 18)} Ver carrinho</a>
-    <a class="btn btn--contorno btn--bloco" href="https://wa.me/${LOJA.whatsapp}" target="_blank" rel="noopener">
-      ${icone('telefone', 18)} Falar no WhatsApp
-    </a>
   </div>
 </div>`;
 }
@@ -119,17 +116,10 @@ function htmlHeader(pagina, raiz) {
 function htmlFooter(raiz) {
   const p = prefixo(raiz);
   const ano = new Date().getFullYear();
-  const cat = [
-    ['Óleos', 'oleos'],
-    ['Filtros', 'filtros'],
-    ['Freios', 'freios'],
-    ['Transmissão', 'transmissao'],
-  ];
-  const cat2 = [
-    ['Pneus', 'pneus'],
-    ['Capacetes', 'capacetes'],
-    ['Capas de chuva', 'capas'],
-    ['Acessórios', 'acessorios'],
+
+  const colunas = [
+    { t: 'Peças', links: [['Óleos', 'catalogo.html?categoria=oleos'], ['Filtros', 'catalogo.html?categoria=filtros'], ['Freios', 'catalogo.html?categoria=freios'], ['Transmissão', 'catalogo.html?categoria=transmissao']] },
+    { t: 'Rodagem e equipamento', links: [['Pneus', 'catalogo.html?categoria=pneus'], ['Capacetes', 'catalogo.html?categoria=capacetes'], ['Capas de chuva', 'catalogo.html?categoria=capas'], ['Ofertas', 'catalogo.html?ofertas=1']] },
   ];
 
   return `
@@ -138,7 +128,7 @@ function htmlFooter(raiz) {
     <div class="footer__grade">
       <div>
         <a class="marca" href="${p}index.html">
-          <span class="marca__simbolo">${icone('moto', 26)}</span>
+          <span class="marca__simbolo">${icone('moto', 23)}</span>
           <span class="marca__texto">
             <span class="marca__nome">${esc(LOJA.nome)}</span>
             <span class="marca__tag">Peças e acessórios</span>
@@ -147,34 +137,31 @@ function htmlFooter(raiz) {
         <p class="footer__sobre">${esc(LOJA.slogan)}. Encontre a peça pela sua moto, retire na loja ou receba em casa.</p>
       </div>
 
-      <div>
-        <h3>Categorias</h3>
-        <div class="footer__links">
-          ${cat.map(([n, s]) => `<a href="${p}catalogo.html?categoria=${s}">${n}</a>`).join('')}
-        </div>
-      </div>
-
-      <div>
-        <h3>Mais peças</h3>
-        <div class="footer__links">
-          ${cat2.map(([n, s]) => `<a href="${p}catalogo.html?categoria=${s}">${n}</a>`).join('')}
-        </div>
-      </div>
+      ${colunas
+        .map(
+          (c) => `<div>
+            <h3>${esc(c.t)}</h3>
+            <div class="footer__links">
+              ${c.links.map(([n, h]) => `<a href="${p}${h}">${n}</a>`).join('')}
+            </div>
+          </div>`
+        )
+        .join('')}
 
       <div>
         <h3>Contato</h3>
         <div class="footer__contato">
-          <span class="footer__contato-item">${icone('local', 18)}<span>${esc(LOJA.endereco.rua)}<br>${esc(LOJA.endereco.bairro)} — ${esc(LOJA.endereco.cidade)}/${esc(LOJA.endereco.estado)}</span></span>
-          <a class="footer__contato-item" href="https://wa.me/${LOJA.whatsapp}" target="_blank" rel="noopener">${icone('telefone', 18)}<span>${esc(LOJA.whatsappExibicao)}</span></a>
-          <span class="footer__contato-item">${icone('email', 18)}<span>${esc(LOJA.email)}</span></span>
-          <span class="footer__contato-item">${icone('relogio', 18)}<span>${LOJA.horario.map((h) => `${esc(h.dia)}: ${esc(h.hora)}`).join('<br>')}</span></span>
+          <span class="footer__contato-item">${icone('local', 17)}<span>${esc(LOJA.endereco.rua)}<br>${esc(LOJA.endereco.bairro)} — ${esc(LOJA.endereco.cidade)}/${esc(LOJA.endereco.estado)}</span></span>
+          <a class="footer__contato-item" href="https://wa.me/${LOJA.whatsapp}" target="_blank" rel="noopener">${icone('telefone', 17)}<span>${esc(LOJA.whatsappExibicao)}</span></a>
+          <span class="footer__contato-item">${icone('email', 17)}<span>${esc(LOJA.email)}</span></span>
+          <span class="footer__contato-item">${icone('relogio', 17)}<span>${LOJA.horario.map((h) => `${esc(h.dia)}: ${esc(h.hora)}`).join('<br>')}</span></span>
         </div>
       </div>
     </div>
 
     <div class="footer__base">
       <span>© ${ano} ${esc(LOJA.nome)} — CNPJ 00.000.000/0001-00 (exemplo)</span>
-      <span class="footer__aviso">${esc('Apresentação demonstrativa. Preços, estoque e avaliações são exemplos e serão substituídos pelos dados reais da loja.')}</span>
+      <span class="footer__aviso">Apresentação demonstrativa. Preços, estoque e avaliações são exemplos e serão substituídos pelos dados reais da loja.</span>
     </div>
   </div>
 </footer>`;
@@ -184,31 +171,24 @@ function htmlFooter(raiz) {
 function htmlBarraMobile(pagina, raiz) {
   const p = prefixo(raiz);
   const itens = [
-    { id: 'inicio', rotulo: 'Início', href: 'index.html', ic: 'painel' },
-    { id: 'catalogo', rotulo: 'Peças', href: 'catalogo.html', ic: 'ferramenta' },
-    { id: 'localizador', rotulo: 'Minha moto', href: 'localizador.html', ic: 'moto' },
-    { id: 'carrinho', rotulo: 'Carrinho', href: 'carrinho.html', ic: 'carrinho' },
+    { id: 'inicio',      rotulo: 'Início',    href: 'index.html',      ic: 'painel' },
+    { id: 'pecas',       rotulo: 'Peças',     href: 'catalogo.html',   ic: 'ferramenta' },
+    { id: 'localizador', rotulo: 'Minha moto',href: 'localizador.html',ic: 'moto' },
+    { id: 'carrinho',    rotulo: 'Carrinho',  href: 'carrinho.html',   ic: 'carrinho' },
   ];
   return `<nav class="barra-mobile" aria-label="Navegação rápida">
     ${itens
-      .map(
-        (i) =>
-          `<a href="${p}${i.href}"${i.id === pagina ? ' aria-current="page"' : ''}>${icone(i.ic, 21)}<span>${i.rotulo}</span></a>`
-      )
+      .map((i) => `<a href="${p}${i.href}"${i.id === pagina ? ' aria-current="page"' : ''}>${icone(i.ic, 20)}<span>${i.rotulo}</span></a>`)
       .join('')}
   </nav>`;
 }
 
 /* --------------------------------------------------------------- montagem -- */
-/* A marca fica no próprio documento, não numa variável do módulo: assim
-   remontar o shell numa página diferente (ou num teste) não fica preso ao
-   estado do documento anterior. */
 export function montarShell({ pagina = '', raiz = '.', titulo } = {}) {
   if (titulo) document.title = `${titulo} — ${LOJA.nome}`;
 
   const topo = document.getElementById('topo');
   const rodape = document.getElementById('rodape');
-
   if (topo) topo.innerHTML = htmlHeader(pagina, raiz);
   if (rodape) rodape.innerHTML = htmlFooter(raiz);
 
@@ -216,51 +196,45 @@ export function montarShell({ pagina = '', raiz = '.', titulo } = {}) {
     document.body.insertAdjacentHTML('beforeend', htmlBarraMobile(pagina, raiz));
   }
 
+  /* A marca fica no documento, não numa variável do módulo: remontar o shell
+     em outra página (ou num teste) não fica preso ao estado anterior. */
   if (!document.documentElement.hasAttribute('data-shell-ligado')) {
     document.documentElement.setAttribute('data-shell-ligado', '1');
-    ligarComportamentos(raiz);
+    ligarComportamentos();
   }
 
-  // marca a página no body — usado para ajustes finos de CSS
   if (pagina) document.body.setAttribute('data-pagina', pagina);
-
   atualizarContadorCarrinho();
   return true;
 }
 
 /* --------------------------------------------------------- comportamentos -- */
-function ligarComportamentos(raiz) {
+function ligarComportamentos() {
+  /* sombra no header ao rolar — mesmo comportamento da referência */
   const cabecalho = document.getElementById('cabecalho');
-  const menu = document.getElementById('menu-mobile');
-  const busca = document.getElementById('busca-topo');
-
-  /* sombra no header ao rolar */
   if (cabecalho) {
-    const aoRolar = () => {
-      cabecalho.classList.toggle('header--rolado', window.scrollY > 8);
-    };
+    const aoRolar = () => cabecalho.classList.toggle('header--rolado', window.scrollY > 8);
     window.addEventListener('scroll', aoRolar, { passive: true });
     aoRolar();
   }
 
   /* menu mobile */
   const abrirMenu = (aberto) => {
+    const menu = document.getElementById('menu-mobile');
     if (!menu) return;
     menu.setAttribute('data-aberto', aberto ? 'true' : 'false');
     menu.setAttribute('aria-hidden', aberto ? 'false' : 'true');
     document.body.style.overflow = aberto ? 'hidden' : '';
     const btn = document.querySelector('[data-abrir-menu]');
     if (btn) btn.setAttribute('aria-expanded', aberto ? 'true' : 'false');
-    if (aberto) {
-      const primeiro = menu.querySelector('a, button');
-      if (primeiro) primeiro.focus();
-    }
   };
 
   document.addEventListener('click', (ev) => {
-    if (ev.target.closest('[data-abrir-menu]')) { abrirMenu(true); return; }
-    if (ev.target.closest('[data-fechar-menu]')) { abrirMenu(false); return; }
+    if (ev.target.closest('[data-abrir-menu]')) return abrirMenu(true);
+    if (ev.target.closest('[data-fechar-menu]')) return abrirMenu(false);
+
     if (ev.target.closest('[data-abrir-busca]')) {
+      const busca = document.getElementById('busca-topo');
       if (!busca) return;
       const vaiAbrir = busca.classList.contains('oculto');
       busca.classList.toggle('oculto', !vaiAbrir);
@@ -270,17 +244,29 @@ function ligarComportamentos(raiz) {
       }
       return;
     }
-    // fecha o menu ao clicar num link de dentro dele
+
+    const menu = document.getElementById('menu-mobile');
     if (menu && menu.getAttribute('data-aberto') === 'true') {
-      const link = ev.target.closest('.menu-mobile a');
-      if (link) abrirMenu(false);
+      if (ev.target.closest('.menu-mobile a')) abrirMenu(false);
+    }
+
+    /* fechar drawers */
+    if (ev.target.closest('[data-fechar-drawer]')) {
+      fecharDrawer();
+      return;
+    }
+    const gatilho = ev.target.closest('[data-abrir-drawer]');
+    if (gatilho) {
+      abrirDrawer(gatilho.getAttribute('data-abrir-drawer'));
+      return;
     }
   });
 
   document.addEventListener('keydown', (ev) => {
-    if (ev.key === 'Escape') {
-      if (menu && menu.getAttribute('data-aberto') === 'true') abrirMenu(false);
-    }
+    if (ev.key !== 'Escape') return;
+    const menu = document.getElementById('menu-mobile');
+    if (menu && menu.getAttribute('data-aberto') === 'true') abrirMenu(false);
+    fecharDrawer();
   });
 
   /* busca */
@@ -290,12 +276,12 @@ function ligarComportamentos(raiz) {
     ev.preventDefault();
     const campo = form.querySelector('input');
     const termo = campo ? campo.value.trim() : '';
-    const p = prefixo(raiz);
+    const raiz = document.body.getAttribute('data-raiz') || '.';
     if (!termo) { avisar('Digite o que você procura.', 'alerta'); return; }
-    window.location.href = `${p}catalogo.html?busca=${encodeURIComponent(termo)}`;
+    window.location.href = `${prefixo(raiz)}catalogo.html?busca=${encodeURIComponent(termo)}`;
   });
 
-  /* links "adicionar ao carrinho" e "favoritar" aparecem em todas as páginas */
+  /* carrinho e favoritos aparecem em todas as páginas */
   document.addEventListener('click', (ev) => {
     const add = ev.target.closest('[data-add-carrinho]');
     if (add) {
@@ -313,12 +299,62 @@ function ligarComportamentos(raiz) {
       const id = fav.getAttribute('data-favoritar');
       const marcado = carrinho.alternarFavorito(id);
       fav.setAttribute('aria-pressed', marcado ? 'true' : 'false');
+      const txt = fav.querySelector('[data-rotulo-favorito]');
+      if (txt) txt.textContent = marcado ? 'Salvo' : 'Salvar';
       avisar(marcado ? 'Salvo nos favoritos.' : 'Removido dos favoritos.');
     }
   });
 }
 
-/* Contador do carrinho no header — chamado por todas as páginas. */
+/* --------------------------------------------------------------- drawers -- */
+/* Um só drawer no documento, reaproveitado por todas as páginas.
+   O conteúdo é montado por quem abre (motos compatíveis, filtros, etc.). */
+export function garantirDrawer() {
+  let d = document.getElementById('drawer-global');
+  if (d) return d;
+  d = document.createElement('div');
+  d.id = 'drawer-global';
+  d.className = 'drawer';
+  d.setAttribute('data-aberto', 'false');
+  d.setAttribute('role', 'dialog');
+  d.setAttribute('aria-modal', 'true');
+  d.innerHTML = `
+    <div class="drawer__veu" data-fechar-drawer></div>
+    <div class="drawer__caixa">
+      <div class="drawer__topo">
+        <h3 id="drawer-titulo">Título</h3>
+        <button class="icone-btn" type="button" data-fechar-drawer aria-label="Fechar">${icone('fechar')}</button>
+      </div>
+      <div class="drawer__corpo" id="drawer-corpo"></div>
+      <div class="drawer__rodape" id="drawer-rodape"></div>
+    </div>`;
+  document.body.appendChild(d);
+  return d;
+}
+
+export function abrirDrawer({ titulo = '', corpo = '', rodape = '' } = {}) {
+  const d = garantirDrawer();
+  const t = document.getElementById('drawer-titulo');
+  const c = document.getElementById('drawer-corpo');
+  const r = document.getElementById('drawer-rodape');
+  if (t) t.textContent = titulo;
+  if (c) c.innerHTML = corpo;
+  if (r) { r.innerHTML = rodape; r.hidden = !rodape; }
+  d.setAttribute('data-aberto', 'true');
+  document.body.style.overflow = 'hidden';
+  const foco = d.querySelector('.icone-btn');
+  if (foco) foco.focus();
+  return d;
+}
+
+export function fecharDrawer() {
+  const d = document.getElementById('drawer-global');
+  if (!d) return;
+  d.setAttribute('data-aberto', 'false');
+  document.body.style.overflow = '';
+}
+
+/* Contador do carrinho no header. */
 export function atualizarContadorCarrinho() {
   const total = carrinho.quantidadeTotal();
   $$('[data-contador-carrinho]').forEach((el) => {
@@ -327,16 +363,4 @@ export function atualizarContadorCarrinho() {
   });
 }
 
-/* Atalho usado pelas páginas para montar um selo de compatibilidade. */
-export function seloCompat(produto, moto) {
-  if (!produto) return '';
-  if (!produto.compat || produto.compat.length === 0) {
-    return `<span class="selo selo--neutro">Universal</span>`;
-  }
-  if (moto && moto.marca && moto.modelo) {
-    return `<span class="selo selo--ok">${icone('check', 12)} Serve na sua</span>`;
-  }
-  return `<span class="selo selo--marinho">Peça específica</span>`;
-}
-
-export { prefixo };
+export { htmlMotoAtiva };

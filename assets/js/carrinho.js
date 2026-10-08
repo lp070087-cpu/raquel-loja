@@ -202,19 +202,24 @@ export const moto = {
     if (!m || !m.marca || !m.modelo) return null;
     return m;
   },
+  /* Guarda marca, modelo, VERSÃO e ano.
+     A versão precisa entrar aqui: sem ela, "CG 160 Fan 2024" virava só
+     "CG 160 2024" e a compatibilidade que distingue Fan de Titan se perdia
+     ao recarregar a página. Foi um defeito real. */
   salvar(m) {
     if (!m || !m.marca || !m.modelo) return null;
-    const guardado = { marca: m.marca, modelo: m.modelo, ano: m.ano != null ? Number(m.ano) : null };
+    const guardado = {
+      marca: m.marca,
+      modelo: m.modelo,
+      versao: m.versao || null,
+      ano: m.ano != null ? Number(m.ano) : null,
+      cilindrada: m.cilindrada || '',
+    };
     gravar(CHAVES.moto, guardado);
     return guardado;
   },
   limpar() {
     gravar(CHAVES.moto, null);
-  },
-  rotulo() {
-    const m = this.ler();
-    if (!m) return '';
-    return `${m.marca} ${m.modelo}${m.ano ? ' ' + m.ano : ''}`;
   },
 };
 

@@ -4,73 +4,66 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Moto Peças — Peças e acessórios para sua moto</title>
-<meta name="description" content="Encontre a peça certa para a sua moto por marca, modelo e ano. Óleo, filtro, freio, transmissão, pneu, capacete e acessórios. Retire na loja ou receba em casa.">
-<meta name="theme-color" content="#FFD200">
+<meta name="description" content="Encontre a peça certa para a sua moto por marca, modelo, versão e ano. Óleo, filtro, freio, transmissão, pneu, capacete e acessórios. Retire na loja ou receba em casa.">
+<meta name="theme-color" content="#FFD400">
 <link rel="stylesheet" href="assets/css/tokens.css">
 <link rel="stylesheet" href="assets/css/app.css">
 <link rel="stylesheet" href="assets/css/art.css">
 </head>
-<body data-pagina="inicio">
+<body data-pagina="inicio" data-raiz=".">
 
 <div id="topo"></div>
 
 <main id="conteudo">
 
-  <!-- HERO (montado por assets/js/hero.js) -->
+  <!-- HERO (assets/js/hero.js) -->
   <div id="hero"></div>
 
-  <!-- MARCAS -->
+  <!-- FAIXA DE MARCAS -->
   <div id="faixa-marcas"></div>
 
-  <!-- LOCALIZADOR DE PEÇAS -->
-  <section class="secao" id="secao-localizador">
+  <!-- LOCALIZADOR DE MOTO -->
+  <section class="secao secao--apertada" id="secao-localizador">
     <div class="container">
       <div id="localizador-container"></div>
     </div>
   </section>
 
   <!-- CATEGORIAS -->
-  <section class="secao secao--cinza" id="secao-categorias">
+  <section class="secao" id="secao-categorias">
     <div class="container">
-      <div class="espaco-entre mb-4">
-        <div class="cabecalho-secao mb-0 revelar">
-          <span class="selo">Categorias</span>
-          <h2 class="mt-2">Do que sua moto precisa hoje?</h2>
-          <p>Escolha por tipo de peça ou use o localizador e veja só o que serve na sua moto.</p>
-        </div>
-        <a class="link-seta" href="catalogo.html">Ver catálogo completo <span id="seta-cat"></span></a>
-      </div>
+      <div id="titulo-categorias"></div>
       <div class="grade grade--4" id="grade-categorias"></div>
     </div>
   </section>
 
-  <!-- DESTAQUES -->
+  <!-- PRODUTOS PARA SUA MOTO (aparece só com moto ativa) -->
+  <section class="secao secao--cinza oculto" id="secao-sua-moto">
+    <div class="container">
+      <div id="sua-moto-topo"></div>
+      <div id="sua-moto-grade"></div>
+    </div>
+  </section>
+
+  <!-- MAIS VENDIDOS -->
   <section class="secao" id="secao-destaques">
     <div class="container">
-      <div class="espaco-entre mb-4">
-        <div class="cabecalho-secao mb-0 revelar">
-          <span class="selo">Mais procurados</span>
-          <h2 class="mt-2">Produtos em destaque</h2>
-          <p>As peças que a oficina e os clientes mais levam da loja.</p>
-        </div>
-        <a class="link-seta" href="catalogo.html?ordenar=relevancia">Ver todos <span id="seta-dest"></span></a>
-      </div>
+      <div id="titulo-destaques"></div>
       <div id="grade-destaques"></div>
     </div>
   </section>
 
-  <!-- FAIXA PROMOCIONAL -->
-  <section class="secao">
+  <!-- BANNER PROMOCIONAL -->
+  <section class="secao secao--apertada">
     <div class="container">
       <div class="faixa-promo revelar">
         <div class="faixa-promo__formas" aria-hidden="true"><span></span><span></span></div>
         <div class="faixa-promo__conteudo">
-          <span class="selo selo--marinho">Retirada na loja</span>
-          <h2 class="mt-2">Reserve agora, retire e pague no balcão</h2>
+          <span class="etiqueta etiqueta--marinho">Retirada na loja</span>
+          <h2>Reserve agora, retire e pague no balcão</h2>
           <p>
-            Escolha as peças pelo site e receba um código de retirada.
-            Você apresenta o código na loja, confere a peça e paga só na hora.
-            Sem pagamento online e sem fila.
+            Escolha as peças pelo site e receba um código de retirada. Você apresenta o código
+            na loja, confere a peça e paga só na hora. Sem pagamento online e sem fila.
           </p>
         </div>
         <div class="faixa-promo__conteudo linha">
@@ -80,109 +73,84 @@
     </div>
   </section>
 
-  <!-- BENEFÍCIOS -->
-  <section class="secao secao--cinza">
+  <!-- MANUTENÇÃO DA SUA MOTO -->
+  <section class="secao">
     <div class="container">
-      <div class="cabecalho-secao cabecalho-secao--centro revelar">
-        <span class="selo">Por que comprar aqui</span>
-        <h2 class="mt-2">Cuide da sua moto em cada detalhe</h2>
-        <p>Uma loja feita para quem depende da moto todo dia — e não pode perder tempo com peça errada.</p>
-      </div>
-      <div class="grade grade--4" id="grade-beneficios"></div>
+      <div id="titulo-manutencao"></div>
+      <div id="grade-manutencao"></div>
     </div>
   </section>
 
-  <!-- CAPACETES E ACESSÓRIOS -->
+  <!-- CAPACETES E EQUIPAMENTOS -->
   <section class="secao">
     <div class="container">
       <div class="banda-moto revelar">
         <div class="banda-moto__formas" aria-hidden="true"><span></span><span></span></div>
         <div>
-          <span class="selo">Equipamento</span>
-          <h2 class="mt-2">Proteção para você, não só peça para a moto</h2>
+          <span class="etiqueta etiqueta--amarela">Equipamento</span>
+          <h2>Proteção para você, não só peça para a moto</h2>
           <p>
-            Capacete, luva, capa de chuva e baú. Equipamento certo muda o dia de quem roda —
+            Capacete, capa de chuva e equipamento certo mudam o dia de quem roda —
             na chuva, na estrada e no trânsito da cidade.
           </p>
-          <ul class="banda-moto__lista mt-3">
-            <li><span id="i1"></span> Capacetes fechados, abertos e off-road</li>
-            <li><span id="i2"></span> Capa de chuva para o piloto e para a moto</li>
-            <li><span id="i3"></span> Baús com chave, luvas de couro e retrovisores</li>
-          </ul>
-          <a class="btn btn--grande" href="catalogo.html?categoria=capacetes">Ver equipamentos</a>
+          <ul class="banda-moto__lista" id="lista-equipamento"></ul>
+          <a class="btn btn--grande" href="catalogo.html?categoria=capacetes,capas">Ver equipamentos</a>
         </div>
         <div class="banda-moto__arte" id="arte-banda"></div>
       </div>
     </div>
   </section>
 
-  <!-- BANNER SECUNDÁRIO -->
+  <!-- OFERTAS -->
   <section class="secao secao--cinza">
     <div class="container">
-      <div class="espaco-entre revelar" style="gap:28px">
-        <div class="cabecalho-secao mb-0">
-          <span class="selo">Ainda em dúvida?</span>
-          <h2 class="mt-2">Encontre pela sua moto</h2>
-          <p>
-            Se você não sabe o nome da peça, não tem problema: escolha a moto e mostramos
-            o que serve nela. É o jeito mais rápido de não errar a compra.
-          </p>
-          <div class="hero__ctas mt-3">
-            <a class="btn btn--grande" href="localizador.html">Encontrar minha peça</a>
-            <a class="btn btn--grande btn--contorno" href="catalogo.html?ofertas=1">Ver ofertas</a>
-          </div>
-        </div>
-        <div id="arte-secundaria" style="max-width:420px;width:100%"></div>
-      </div>
+      <div id="titulo-ofertas"></div>
+      <div id="grade-ofertas"></div>
+    </div>
+  </section>
+
+  <!-- BENEFÍCIOS -->
+  <section class="secao">
+    <div class="container">
+      <div id="titulo-beneficios"></div>
+      <div class="grade grade--4" id="grade-beneficios"></div>
     </div>
   </section>
 
   <!-- AVALIAÇÕES -->
-  <section class="secao">
+  <section class="secao secao--cinza">
     <div class="container">
-      <div class="cabecalho-secao cabecalho-secao--centro revelar">
-        <span class="selo">Quem já comprou</span>
-        <h2 class="mt-2">O que dizem os clientes</h2>
-        <p>Avaliações de exemplo, mostrando como a loja vai exibir a opinião de quem compra.</p>
-      </div>
+      <div id="titulo-avaliacoes"></div>
       <div class="grade grade--3" id="grade-avaliacoes"></div>
     </div>
   </section>
 
   <!-- FAQ -->
-  <section class="secao secao--cinza">
+  <section class="secao">
     <div class="container">
-      <div class="cabecalho-secao cabecalho-secao--centro revelar">
-        <span class="selo">Dúvidas</span>
-        <h2 class="mt-2">Perguntas frequentes</h2>
-      </div>
+      <div id="titulo-faq"></div>
       <div id="bloco-faq"></div>
     </div>
   </section>
 
   <!-- CONTATO -->
-  <section class="secao" id="secao-contato">
+  <section class="secao secao--cinza" id="secao-contato">
     <div class="container">
+      <div id="titulo-contato"></div>
       <div class="contato-grade">
         <div class="contato-card revelar">
-          <span class="selo">Fale com a loja</span>
-          <h2 class="mt-2">A gente confirma a peça com você</h2>
-          <p class="texto-2">
+          <h3>A gente confirma a peça com você</h3>
+          <p class="texto-2 pequeno">
             Manda o modelo e o ano da sua moto no WhatsApp que a equipe confirma a peça certa
             antes de você comprar.
           </p>
           <div class="contato-card__lista" id="lista-contato"></div>
-          <div class="hero__ctas mt-3">
-            <a class="btn btn--grande" href="https://wa.me/5581900000000" target="_blank" rel="noopener" id="btn-whats">
-              Abrir WhatsApp
-            </a>
-          </div>
+          <a class="btn mt-3" href="https://wa.me/5581900000000" target="_blank" rel="noopener" id="btn-whats">Abrir WhatsApp</a>
         </div>
         <div class="contato-card revelar">
-          <span class="selo">Onde estamos</span>
-          <h2 class="mt-2">Venha retirar na loja</h2>
+          <h3>Venha retirar na loja</h3>
           <div class="mapa-falso" id="mapa-falso" role="img" aria-label="Localização aproximada da loja"></div>
-          <p class="texto-3 pequeno mt-2 mb-0" id="texto-endereco"></p>
+          <p class="texto-3 micro mt-3 mb-0" id="texto-endereco"></p>
         </div>
       </div>
     </div>

@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Catálogo — Moto Peças</title>
-<meta name="description" content="Catálogo de peças e acessórios para moto: óleo, filtro, freio, transmissão, pneu, capacete e acessórios.">
-<meta name="theme-color" content="#FFD200">
+<meta name="description" content="Catálogo de peças e acessórios para moto: óleo, filtro, freio, transmissão, pneu, capacete e capa de chuva.">
+<meta name="theme-color" content="#FFD400">
 <link rel="stylesheet" href="assets/css/tokens.css">
 <link rel="stylesheet" href="assets/css/app.css">
 <link rel="stylesheet" href="assets/css/art.css">
 </head>
-<body data-pagina="catalogo">
+<body data-pagina="pecas" data-raiz=".">
 
 <div id="topo"></div>
 
@@ -22,21 +22,18 @@
         <a href="index.html">Início</a> <span aria-hidden="true">/</span> <span id="migalha-atual">Catálogo</span>
       </nav>
       <h1 id="titulo-pagina">Catálogo de peças</h1>
-      <p class="texto-2 mb-0" id="subtitulo-pagina">Peças e acessórios para a sua moto. Use os filtros ou o localizador para ver só o que serve.</p>
+      <p class="pagina-topo__sub" id="subtitulo-pagina">Peças e acessórios para moto.</p>
     </div>
   </section>
 
-  <section class="secao">
+  <section class="secao secao--apertada">
     <div class="container">
 
-      <!-- Barra do localizador rápido -->
-      <div id="localizador-curto" class="mb-4"></div>
+      <!-- faixa da moto ativa -->
+      <div id="aviso-moto" class="mb-3"></div>
 
-      <!-- filtros ativos (chips) -->
+      <!-- filtros ativos -->
       <div class="filtros-ativos" id="filtros-ativos"></div>
-
-      <!-- aviso "sua moto" -->
-      <div id="aviso-moto"></div>
 
       <button class="btn btn--contorno btn--bloco mb-3 filtros__toggle" type="button" data-abrir-filtros
               aria-expanded="false" aria-controls="painel-filtros">
@@ -48,6 +45,11 @@
           <div class="filtros__cabecalho">
             <strong>Filtros</strong>
             <button class="filtros__limpar" type="button" data-limpar-filtros>Limpar tudo</button>
+          </div>
+
+          <div class="filtros__grupo">
+            <span class="filtros__titulo">Moto</span>
+            <div class="filtros__opcoes" id="filtro-moto"></div>
           </div>
 
           <div class="filtros__grupo">
@@ -70,11 +72,6 @@
             <div class="filtros__opcoes" id="filtro-preco"></div>
           </div>
 
-          <div class="filtros__grupo">
-            <span class="filtros__titulo">Moto</span>
-            <div class="filtros__opcoes" id="filtro-moto"></div>
-          </div>
-
           <button class="btn btn--contorno btn--bloco btn--pequeno filtros__toggle" type="button" data-fechar-filtros>
             Aplicar e fechar
           </button>
@@ -84,14 +81,8 @@
           <div class="barra-resultados">
             <p class="barra-resultados__contagem" id="contagem" role="status"></p>
             <div class="barra-resultados__ordenar">
-              <label class="campo__rotulo mb-0" for="ordenar">Ordenar</label>
-              <select class="entrada" id="ordenar">
-                <option value="relevancia">Mais relevantes</option>
-                <option value="menor">Menor preço</option>
-                <option value="maior">Maior preço</option>
-                <option value="nome">Nome (A–Z)</option>
-                <option value="novidades">Novidades</option>
-              </select>
+              <label class="rotulo mb-0" for="ordenar">Ordenar</label>
+              <select class="entrada" id="ordenar"></select>
             </div>
           </div>
 
