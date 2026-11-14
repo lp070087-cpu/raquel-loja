@@ -1,0 +1,11 @@
+backend/
+node_modules/
+tests/
+scripts/
+evidence/
+test-results/
+playwright-report/
+.env
+.env.*
+*.md
+playwright*.config.mjs

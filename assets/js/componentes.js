@@ -5,7 +5,7 @@
    Se ele morasse em cada página, os quatro já teriam divergido.
    ============================================================================ */
 
-import { LOJA, precoPix, parcelaDe, produtoServeEm, ehUniversal, rotuloMoto, aplicacoesDoProduto } from './dados.js';
+import { LOJA, produtoServeEm, ehUniversal, rotuloMoto, aplicacoesDoProduto } from './dados.js';
 import { moeda, esc, icone, temDesconto, descontoPct, estrelas } from './utils.js';
 import { midiaProduto } from './artes.js';
 import { favoritos, moto as motoStore } from './carrinho.js';
@@ -17,7 +17,6 @@ export function cardProduto(p, opcoes = {}) {
   const serve = moto && !universal ? produtoServeEm(p, moto) : false;
   const esgotado = Number(p.estoque) <= 0;
   const fav = favoritos.ehFavorito(p.id);
-  const pix = precoPix(p.preco);
   const nota = p.avaliacao ? p.avaliacao.nota : null;
 
   /* Compatibilidade em UMA linha, discreta — informação técnica, não alarme. */
@@ -40,7 +39,8 @@ export function cardProduto(p, opcoes = {}) {
   else if (Number(p.estoque) <= Number(p.estoqueMinimo)) selos.push(`<span class="selo selo--alerta">Últimas</span>`);
 
   return `
-<article class="produto-card revelar${esgotado ? ' produto-card--esgotado' : ''}">
+<article class="produto-card revelar${esgotado ? ' produto-card--esgotado' : ''}"
+         data-produto-card="${esc(p.id)}">
   <div class="produto-card__midia">
     <a href="produto.html?id=${encodeURIComponent(p.id)}" aria-label="Ver ${esc(p.nome)}">
       ${midiaProduto(p, { alt: p.nome })}
@@ -48,7 +48,9 @@ export function cardProduto(p, opcoes = {}) {
     <span class="produto-card__brilho" aria-hidden="true"></span>
     <div class="produto-card__selos">${selos.join('')}</div>
     <button class="produto-card__favorito" type="button" data-favoritar="${esc(p.id)}"
-            aria-pressed="${fav ? 'true' : 'false'}" aria-label="Salvar ${esc(p.nome)} nos favoritos">
+            data-nome="${esc(p.nome)}"
+            aria-pressed="${fav ? 'true' : 'false'}"
+            aria-label="${fav ? 'Remover' : 'Salvar'} ${esc(p.nome)} ${fav ? 'dos' : 'nos'} favoritos">
       ${icone('coracao', 18)}
     </button>
   </div>
@@ -63,16 +65,22 @@ export function cardProduto(p, opcoes = {}) {
     <div class="produto-card__precos">
       ${temDesconto(p) ? `<span class="produto-card__de">${moeda(p.precoDe)}</span>` : ''}
       <span class="produto-card__preco">${moeda(p.preco)}</span>
-      <span class="produto-card__pix">${moeda(pix)} no Pix</span>
+      <span class="produto-card__pix">Pagamento na retirada</span>
     </div>
 
     <div class="produto-card__rodape">
       ${
         esgotado
-          ? `<button class="btn btn--contorno btn--bloco btn--pequeno" type="button" disabled>Sem estoque</button>`
+          ? `<a class="btn btn--contorno btn--bloco btn--pequeno" href="produto.html?id=${encodeURIComponent(p.id)}">
+               ${icone('olho', 16)} Ver detalhes
+             </a>
+             <button class="btn btn--contorno btn--bloco btn--pequeno" type="button" disabled>Sem estoque</button>`
           : `<button class="btn btn--bloco btn--pequeno" type="button" data-add-carrinho="${esc(p.id)}" data-qtd="1">
-               ${icone('carrinho', 17)} Adicionar
-             </button>`
+               ${icone('carrinho', 17)} Adicionar ao carrinho
+             </button>
+             <a class="btn btn--contorno btn--bloco btn--pequeno" href="produto.html?id=${encodeURIComponent(p.id)}">
+               ${icone('olho', 16)} Ver detalhes
+             </a>`
       }
     </div>
   </div>
@@ -145,11 +153,84 @@ export function blocoFaq(lista) {
 }
 
 /* ---------------------------------------------------- faixa de marcas ---- */
+/**
+ * Letreiro de marcas — laço infinito e sem emenda.
+ *
+ * POR QUE ASSIM (e não a versão anterior):
+ * a versão antiga jogava a lista duas vezes dentro de um flex com `gap` e
+ * deslocava `translateX(-50%)`. Parece certo, mas o `gap` só existe ENTRE
+ * itens: as duas metades ficavam separadas por um vão a mais no meio, e -50%
+ * do total não batia com a largura de uma metade. O erro era de meio vão
+ * (32px) — exatamente o "salto" que se via quando a sequência chegava ao fim.
+ *
+ * A correção: cada metade é um GRUPO próprio, com o mesmo vão interno E um
+ * respiro do mesmo tamanho no fim. Assim as duas metades têm largura
+ * idêntica, e deslocar 50% do conjunto cai exatamente no começo da segunda —
+ * o quadro final é igual ao inicial, e o olho não percebe a emenda.
+ *
+ * A segunda cópia é `aria-hidden`: leitor de tela lê a lista uma vez só.
+ */
 export function marqueeMarcas(nomes) {
-  const itens = nomes.map((n) => `<span class="marquee__item">${esc(n)}</span>`).join('');
-  return `<div class="marquee" aria-hidden="true"><div class="marquee__trilha">${itens}${itens}</div></div>`;
+  /* Um "ciclo" é a lista inteira de marcas. A trilha recebe 2 ciclos; o
+     `ligarMarquee()` depois ACRESCENTA ciclos até cobrir a tela e mede a
+     largura real de um ciclo para calcular o deslocamento. */
+  const ciclo = `<ul class="marquee__ciclo">${
+    nomes.map((n) => `<li class="marquee__item">${esc(n)}</li>`).join('')
+  }</ul>`;
+  return `<div class="marquee" role="marquee" aria-label="Marcas atendidas pela loja">
+    <div class="marquee__trilha" data-marquee-trilha>${ciclo}${ciclo}</div>
+  </div>`;
 }
 
+/*
+   LETREIRO INFINITO DE VERDADE
+   ---------------------------------------------------------------------------
+   Duas coisas quebram um marquee, e as duas já aconteceram aqui:
+
+   1) DESLOCAR POR PORCENTAGEM. `translateX(-50%)` só fecha o laço se as duas
+      metades tiverem exatamente a mesma largura E se uma metade cobrir a tela.
+      Com 7 marcas, uma metade dá ~1150px: em tela de 1920px sobra VÃO VAZIO no
+      fim. Porcentagem não sabe a largura real do conteúdo.
+      Solução: medir a largura de UM ciclo e deslocar exatamente esse valor.
+
+   2) POUCAS CÓPIAS. Com só 2 ciclos, telas largas mostram o fim da lista.
+      Solução: acrescentar ciclos até o conteúdo cobrir a tela + 1 ciclo.
+
+   Velocidade constante: a duração é `largura do ciclo ÷ pixels por segundo`,
+   então a marca anda sempre na mesma velocidade, não importa o tamanho da
+   tela nem quantas marcas existem.
+*/
+const MARQUEE_PX_POR_SEGUNDO = 46;
+
+export function ligarMarquee() {
+  const trilha = document.querySelector('[data-marquee-trilha]');
+  if (!trilha) return null;
+
+  const ciclos = Array.prototype.slice.call(trilha.querySelectorAll('.marquee__ciclo'));
+  if (!ciclos.length) return null;
+
+  const primeiro = ciclos[0];
+
+  /* 1) ciclos suficientes para cobrir a tela + 1 ciclo de sobra */
+  const larguraCiclo = primeiro.getBoundingClientRect().width;
+  if (!larguraCiclo) return null;
+
+  const alvo = (window.innerWidth || 0) + larguraCiclo;
+  let necessarios = Math.max(2, Math.ceil(alvo / larguraCiclo));
+  if (necessarios > 24) necessarios = 24;      /* teto de segurança */
+  while (trilha.children.length < necessarios) {
+    const copia = primeiro.cloneNode(true);
+    copia.setAttribute('aria-hidden', 'true');  /* leitor de tela lê uma vez */
+    trilha.appendChild(copia);
+  }
+
+  /* 2) o deslocamento é o tamanho REAL de um ciclo */
+  trilha.style.setProperty('--marquee-ciclo', larguraCiclo + 'px');
+  /* 3) velocidade constante: mesma quantidade de pixels por segundo */
+  trilha.style.animationDuration = (larguraCiclo / MARQUEE_PX_POR_SEGUNDO) + 's';
+
+  return { larguraCiclo, ciclos: trilha.children.length };
+}
 export function avisoDemo(texto) {
   return `<div class="aviso-demostrativo">${icone('info', 15)}<span>${esc(texto)}</span></div>`;
 }

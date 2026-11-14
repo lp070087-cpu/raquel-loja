@@ -1,0 +1,2 @@
+import {defineConfig} from './backend/node_modules/@playwright/test/index.mjs';
+export default defineConfig({testDir:'./tests',testMatch:'admin-read-panels.spec.mjs',workers:1,timeout:600000,expect:{timeout:30000},reporter:'list',use:{baseURL:'http://127.0.0.1:8000',channel:process.env.PLAYWRIGHT_CHANNEL||undefined,launchOptions:{args:['--disable-gpu']},reducedMotion:'reduce',actionTimeout:30000,navigationTimeout:30000,trace:'off',screenshot:'off'},outputDir:'test-results/admin-read-panels'});

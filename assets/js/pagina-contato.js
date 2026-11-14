@@ -83,7 +83,7 @@ export function montarContato() {
       <p>Peça reservada pelo site e retirada no balcão, com o código gerado no checkout.</p>
     </div>
     <div class="contato-grade">
-      <div class="mapa-falso" id="mapa-contato" role="img" aria-label="Mapa ilustrado da região da loja"></div>
+      <div class="mapa" id="mapa-contato" data-mapa aria-label="Mapa do endereço de retirada"></div>
       <div class="painel-dados">
         <h3>Endereço e horário</h3>
         <div class="painel-dados__linha"><span class="rot">Loja</span><span class="val">${esc(LOJA.nome)}</span></div>
@@ -97,28 +97,13 @@ export function montarContato() {
   </section>`;
 
   /* --------------------------------------------------------- mapa ------- */
-  const mapa = document.getElementById('mapa-contato');
-  if (mapa) {
-    mapa.innerHTML = `<svg viewBox="0 0 400 250" role="img" aria-label="Mapa ilustrado" style="width:100%;height:100%;display:block">
-      <rect width="400" height="250" fill="#EDF1F6"/>
-      <path d="M0 168 h400" stroke="#D8DEE8" stroke-width="26"/>
-      <path d="M0 168 h400" stroke="#FFFFFF" stroke-width="3" stroke-dasharray="14 12"/>
-      <path d="M118 0 v250" stroke="#D8DEE8" stroke-width="20"/>
-      <path d="M118 0 v250" stroke="#FFFFFF" stroke-width="3" stroke-dasharray="14 12"/>
-      <g fill="#DCE3EC">
-        <rect x="140" y="40" width="60" height="46" rx="5"/>
-        <rect x="216" y="40" width="46" height="46" rx="5"/>
-        <rect x="140" y="192" width="72" height="40" rx="5"/>
-        <rect x="24" y="52" width="66" height="42" rx="5"/>
-        <rect x="300" y="52" width="72" height="42" rx="5"/>
-      </g>
-      <g transform="translate(196,116)">
-        <path d="M0 0a26 26 0 1 1 0.1 0z" fill="#FFD200" stroke="#0B1526" stroke-width="4"/>
-        <circle cx="0" cy="0" r="9" fill="#0B1526"/>
-        <path d="M0 26 v22" stroke="#0B1526" stroke-width="4"/>
-      </g>
-    </svg>`;
-  }
+  /* O mapa é montado por assets/js/mapa.js — mapa real do OpenStreetMap, com
+     marcador no endereço demonstrativo.
+     A chamada é AQUI, não no HTML: o container do mapa (#mapa-contato) só
+     existe depois que esta função desenha a página. Chamar do HTML não
+     encontraria nada e o card ficaria vazio. */
+  import('./mapa.js').then((m) => m.ligarMapas()).catch(() => {});
+
 
   /* ----------------------------------------------------- formulário ----- */
   const form = document.getElementById('form-contato');

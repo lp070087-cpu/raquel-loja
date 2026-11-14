@@ -6,11 +6,12 @@
    já reflete aqui.
    ============================================================================ */
 
-import { LOJA, precoPix, produtoPorId } from './dados.js';
+import { LOJA, CUPONS, precoPix, produtoPorId } from './dados.js';
 import { moeda, esc, icone, $, $$, avisar, prepararRevelar } from './utils.js';
 import { midiaProduto } from './artes.js';
 import { carrinho, PRODUTOS } from './carrinho.js';
 import { cardProduto, estadoVazio } from './componentes.js';
+import * as cupom from './cupom.js';
 
 export function montarCarrinho() {
   const alvo = document.getElementById('carrinho-container');
@@ -19,7 +20,12 @@ export function montarCarrinho() {
   function desenhar() {
     const itens = carrinho.detalhados();
     const subtotal = carrinho.subtotal();
-    const pix = precoPix(subtotal);
+    /* O cupom é reconferido a cada desenho: se o carrinho encolheu e deixou de
+       atingir o mínimo, ele sai sozinho (ver cupom.atual). */
+    const cupomAplicado = cupom.atual();
+    const desconto = cupomAplicado ? cupomAplicado.desconto : 0;
+    const total = Math.round((subtotal - desconto) * 100) / 100;
+    const pix = precoPix(total);
     const faltaFreteGratis = Number(LOJA.freeShippingFrom) - subtotal;
 
     const resumoTopo = document.getElementById('resumo-topo');
@@ -63,21 +69,40 @@ export function montarCarrinho() {
         <h3>Resumo</h3>
 
         <div class="resumo__linha"><span>Produtos (${carrinho.quantidadeTotal()})</span><span>${moeda(subtotal)}</span></div>
-        <div class="resumo__linha"><span>Frete</span><span>${carrinho.freteGratis() ? 'Grátis no PAC' : 'Calculado no checkout'}</span></div>
-        <div class="resumo__linha"><span>No Pix (${Math.round(LOJA.pixDesconto * 100)}% off)</span><span class="forte">${moeda(pix)}</span></div>
+        <div class="resumo__linha"><span>Frete</span><span>Entrega online indisponível</span></div>
+        ${desconto > 0 ? `<div class="resumo__linha resumo__linha--desconto">
+            <span>Cupom ${esc(cupomAplicado.cupom.codigo)}
+              <button class="link-simples micro" type="button" data-remover-cupom>remover</button>
+            </span>
+            <span class="forte">− ${moeda(desconto)}</span>
+          </div>` : ''}
+        <p class="resumo__nota">Pagamento realizado na retirada, diretamente na loja</p>
 
         <div class="resumo__linha resumo__linha--total">
-          <span>Total</span><span>${moeda(subtotal)}</span>
+          <span>Total</span><span>${moeda(total)}</span>
         </div>
 
+        <form class="cupom" id="form-cupom" novalidate>
+          <label class="rotulo" for="campo-cupom">Cupom de desconto</label>
+          <div class="cupom__linha">
+            <input class="entrada" id="campo-cupom" type="text" autocomplete="off"
+                   spellcheck="false" placeholder="Ex.: ${esc((CUPONS[0] || {}).codigo || 'CUPOM')}"
+                   value="${esc(cupom.codigoSalvo())}">
+            <button class="btn btn--contorno btn--pequeno" type="submit">
+              ${cupomAplicado ? 'Trocar' : 'Aplicar'}
+            </button>
+          </div>
+          <span class="micro texto-3">Validade, limite e desconto conferidos no servidor.</span>
+        </form>
+
         ${
-          faltaFreteGratis > 0
+          false
             ? `<div class="mensagem mensagem--alerta mt-2">
                  ${icone('caminhao', 18)}
                  <span>Faltam <strong>${moeda(faltaFreteGratis)}</strong> para o frete sair de graça no PAC.</span>
                </div>`
             : `<div class="mensagem mensagem--ok mt-2">
-                 ${icone('check', 18)} <span>Você tem frete grátis no PAC.</span>
+                 ${icone('loja', 18)} <span>Retirada na loja, sem frete. Entrega depende de integração futura.</span>
                </div>`
         }
 
@@ -111,8 +136,8 @@ export function montarCarrinho() {
   }
 
   function itemCarrinho(item) {
-    const p = produtoPorId(item.id);
-    const max = Math.max(1, Number(p.estoque));
+    const p = produtoPorId(item.id) || { id: item.id, nome: item.nome, estoque: 0 };
+    const max = Math.min(99, Math.max(1, Number(p.estoque)));
     const universal = !p.compat || p.compat.length === 0;
 
     return `
@@ -157,8 +182,8 @@ export function montarCarrinho() {
     $$('.item-carrinho').forEach((el) => {
       const id = el.getAttribute('data-item');
       const campo = el.querySelector('[data-qtd]');
-      const p = produtoPorId(id);
-      const max = Math.max(1, Number(p.estoque));
+      const p = produtoPorId(id) || { estoque: 0 };
+      const max = Math.min(99, Math.max(1, Number(p.estoque)));
 
       const aplicar = (n) => {
         let v = Math.floor(Number(n));
@@ -185,15 +210,41 @@ export function montarCarrinho() {
     });
   }
 
-  /* esvaziar */
+  /* esvaziar e cupom */
   document.addEventListener('click', (ev) => {
     if (ev.target.closest('[data-limpar-carrinho]')) {
+      if (!window.confirm('Deseja remover todos os itens do carrinho?')) return;
       carrinho.limpar();
+      cupom.limpar();               /* sem itens não há desconto a manter */
       avisar('Carrinho esvaziado.');
       desenhar();
       import('./shell.js').then((m) => m.atualizarContadorCarrinho()).catch(() => {});
+      return;
+    }
+    if (ev.target.closest('[data-remover-cupom]')) {
+      cupom.limpar();
+      avisar('Cupom removido.');
+      desenhar();
     }
   });
 
+  /* aplicar cupom */
+  document.addEventListener('submit', async (ev) => {
+    const form = ev.target.closest('#form-cupom');
+    if (!form) return;
+    ev.preventDefault();
+    const campo = form.querySelector('#campo-cupom');
+    const botao = form.querySelector('button[type="submit"]');
+    if (botao.disabled) return;
+    botao.disabled = true;
+    const r = await cupom.aplicarSeguro(campo ? campo.value : '');
+    botao.disabled = false;
+    avisar(r.mensagem, r.ok ? 'ok' : 'erro');
+    if (r.ok) desenhar();
+    else if (campo) campo.style.borderColor = 'var(--erro)';
+  });
+
+  window.addEventListener('comerciochange', desenhar);
+  cupom.revalidarSeguro().then(desenhar);
   desenhar();
 }

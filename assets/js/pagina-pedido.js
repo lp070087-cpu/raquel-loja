@@ -5,28 +5,54 @@
    quando o pedido é para retirada na loja, ou os dados de envio quando é
    entrega.
 
-   O código vem de `pedido.codigoRetirada`, gerado em carrinho.js no momento
-   do pedido — nunca está escrito no HTML.
+   O pedido pertence à sessão autenticada e é consultado na API. Código de
+   retirada e totais vêm do servidor, sem consultar pedidos do navegador.
    ============================================================================ */
 
-import { LOJA } from './dados.js';
+import { LOJA, produtoPorId } from './dados.js';
 import { moeda, esc, icone, $, avisar, dataHora, prepararRevelar } from './utils.js';
-import { pedidos, nomeStatus, corStatus, formatarCodigo } from './carrinho.js';
+import { nomeStatus, corStatus } from './carrinho.js';
+import { api } from './api.js';
 import { linhaProduto, estadoVazio } from './componentes.js';
 
-export function montarPedido() {
+export async function montarPedido() {
   const alvo = document.getElementById('pedido-container');
   if (!alvo) return;
 
   const q = new URLSearchParams(window.location.search);
-  const id = q.get('id') || pedidos.ultimoId();
-  const pedido = id ? pedidos.porId(id) : null;
+  const id = q.get('id');
+  alvo.innerHTML = '<p class="mensagem" role="status">Consultando seu pedido…</p>';
+  let pedido;
+  try {
+    if (!id) throw new Error('Selecione um pedido em Minha Conta.');
+    const resultado = await api('/orders/' + encodeURIComponent(id));
+    const remoto = resultado.order || resultado;
+    const endereco = remoto.addressSnapshot || {};
+    const perfil = (await api('/profile')).user;
+    pedido = {
+      id: remoto.orderNumber, criadoEm: remoto.createdAt,
+      tipo: remoto.fulfillmentType === 'PICKUP' ? 'retirada' : 'entrega',
+      status: ({ PENDING: 'aguardando-retirada', CONFIRMED: 'aguardando-retirada', READY: 'aguardando-retirada', READY_FOR_PICKUP: 'aguardando-retirada', SHIPPED: 'em-transito', COMPLETED: 'concluido', CANCELLED: 'cancelado' })[remoto.status] || remoto.status,
+      codigoRetirada: remoto.pickupCode || null,
+      retiradoEm: remoto.pickedUpAt, pago: remoto.paymentStatus === 'PAID',
+      cliente: { nome: perfil?.name || '', telefone: perfil?.phone || '', email: perfil?.email || '' },
+      itens: remoto.items.map(i => ({ id: i.productId, nome: i.nameSnapshot, foto: produtoPorId(i.productId)?.foto, preco: i.unitPriceCents / 100, qtd: i.quantity, subtotal: i.totalCents / 100 })),
+      subtotal: remoto.subtotalCents / 100, frete: remoto.shippingCents / 100,
+      desconto: remoto.discountCents / 100, total: remoto.totalCents / 100,
+      pagamento: `${({ ON_PICKUP:'Na retirada, diretamente na loja', CASH: 'Dinheiro no balcão', PIX: 'Pix presencial', CARD: 'Cartão na maquininha' })[remoto.paymentMethod] || remoto.paymentMethod} — ${remoto.paymentStatus === 'PAID' ? 'confirmado' : 'pendente'}`,
+      entrega: { transportadora: 'A confirmar', servico: '', prazo: 'A confirmar', endereco: { rua: endereco.street, numero: endereco.number, complemento: endereco.complement, bairro: endereco.neighborhood, cidade: endereco.city, estado: endereco.state, cep: endereco.zipCode } },
+    };
+  } catch (error) {
+    if (error.status === 401) { window.location.href = 'conta.html?next=' + encodeURIComponent('pedido.html?id=' + (id || '')); return; }
+    alvo.innerHTML = `<div class="mensagem mensagem--erro" role="alert">${esc(error.message)}</div><a class="btn" href="conta.html">Ir para Minha Conta</a>`;
+    return;
+  }
 
   if (!pedido) {
     alvo.innerHTML = estadoVazio({
       icone: 'busca',
       titulo: 'Pedido não encontrado',
-      texto: 'Não encontramos este pedido neste navegador. Faça um novo pedido ou consulte a sua conta.',
+      texto: 'Não encontramos este pedido na sua conta.',
       acao: { href: 'catalogo.html', rotulo: 'Voltar ao catálogo' },
     });
     return;
@@ -44,18 +70,18 @@ export function montarPedido() {
         ${icone(retirada ? 'checkCirculo' : 'caminhao', 48)}
       </div>
       <span class="selo ${corStatus(pedido.status)}">${esc(nomeStatus(pedido.status))}</span>
-      <h1 class="mt-2">${retirada ? 'Pedido reservado!' : 'Pedido realizado!'}</h1>
+      <h1 class="mt-2">${pedido.status === 'cancelado' ? 'Pedido cancelado' : pedido.retiradoEm ? 'Pedido retirado!' : retirada ? 'Pedido reservado!' : 'Pedido realizado!'}</h1>
       <p class="texto-2">
         ${
           retirada
-            ? 'Apresente este código no balcão para retirar e pagar seu pedido.'
+            ? (pedido.status === 'cancelado' ? 'Este pedido foi cancelado e não está disponível para retirada.' : pedido.retiradoEm ? 'Retirada confirmada pela equipe da loja.' : 'Apresente seu código no balcão. Pagamento realizado na retirada, diretamente na loja.')
             : 'Recebemos seu pedido. Assim que ele for postado, enviamos o código de rastreio para você.'
         }
       </p>
     </div>
 
     ${
-      retirada
+      retirada && pedido.codigoRetirada
         ? `
     <div class="codigo-retirada">
       <div class="codigo-retirada__formas" aria-hidden="true"><span></span><span></span></div>
@@ -72,9 +98,9 @@ export function montarPedido() {
 
     <div class="mensagem mensagem--alerta mb-3">
       ${icone('info', 18)}
-      <span>${esc('Apresentação demonstrativa: neste protótipo o código é gerado no próprio navegador. Na versão final ele é gerado e conferido no servidor, com validade e registro de quem retirou.')}</span>
+      <span>${pedido.pago ? 'Pagamento confirmado. Apresente o código para retirar seu pedido.' : 'Código protegido pelo servidor. A retirada exige pagamento confirmado pela loja.'}</span>
     </div>`
-        : `
+        : retirada ? `<div class="mensagem mb-3" role="status">${pedido.retiradoEm ? 'Retirada registrada em ' + esc(dataHora(pedido.retiradoEm)) + '. Este código foi encerrado.' : 'Código indisponível para este pedido.'}</div>` : `
     <div class="painel-dados mb-3">
       <h3>${icone('caminhao', 20)} Entrega</h3>
       <div class="painel-dados__linha"><span class="rot">Transportadora</span><span class="val">${esc(pedido.entrega.transportadora)} — ${esc(pedido.entrega.servico)}</span></div>
@@ -87,7 +113,7 @@ export function montarPedido() {
 
     <div class="aviso-demostrativo mb-3">
       ${icone('info', 16)}
-      <span>Entrega e valores demonstrativos. Na versão final o frete é calculado pela API oficial do Melhor Envio.</span>
+      <span>Consulte a loja para confirmar a entrega. Nenhum pagamento online é processado.</span>
     </div>`
     }
 
@@ -96,6 +122,7 @@ export function montarPedido() {
         <h3>Itens do pedido</h3>
         ${pedido.itens.map((i) => linhaProduto(i)).join('')}
         <div class="painel-dados__linha mt-2"><span class="rot">Subtotal</span><span class="val">${moeda(pedido.subtotal)}</span></div>
+        ${pedido.desconto > 0 ? `<div class="painel-dados__linha"><span class="rot">Desconto</span><span class="val">− ${moeda(pedido.desconto)}</span></div>` : ''}
         ${
           !retirada
             ? `<div class="painel-dados__linha"><span class="rot">Frete</span><span class="val">${pedido.frete === 0 ? 'Grátis' : moeda(pedido.frete)}</span></div>`

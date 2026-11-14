@@ -1,0 +1,357 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  STAFF
+  ADMIN
+}
+
+enum CouponType {
+  PERCENT
+  FIXED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  READY
+  SHIPPED
+  COMPLETED
+  CANCELLED
+}
+
+enum FulfillmentType {
+  PICKUP
+  DELIVERY
+}
+
+enum PaymentMethod {
+  ON_PICKUP
+  PIX
+  CARD
+  CASH
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum TokenPurpose {
+  RESET_PASSWORD
+  VERIFY_EMAIL
+}
+
+model User {
+  id              String               @id @default(cuid())
+  name            String
+  email           String               @unique
+  phone           String
+  passwordHash    String
+  role            Role                 @default(CUSTOMER)
+  emailVerifiedAt DateTime?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  sessions        Session[]
+  addresses       Address[]
+  motorcycles     CustomerMotorcycle[]
+  cart            Cart?
+  favorites       Favorite[]
+  orders          Order[]
+  redemptions     CouponRedemption[]
+  tokens          AuthToken[]
+  handledPickups  Order[] @relation("PickupEmployee")
+  payments CounterPayment[]
+  orderEvents OrderEvent[]
+  adminAudits AdminAudit[]
+}
+
+model Session {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  csrfHash  String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+model AuthToken {
+  id        String       @id @default(cuid())
+  userId    String
+  tokenHash String       @unique
+  purpose   TokenPurpose
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime     @default(now())
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose])
+}
+
+model Address {
+  id            String  @id @default(cuid())
+  userId        String
+  recipientName String
+  phone         String
+  zipCode       String
+  street        String
+  number        String
+  complement    String?
+  neighborhood  String
+  city          String
+  state         String
+  isDefault     Boolean @default(false)
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model CustomerMotorcycle {
+  id        String  @id @default(cuid())
+  userId    String
+  brand     String
+  model     String
+  version   String?
+  year      Int
+  nickname  String?
+  isPrimary Boolean @default(false)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Product {
+  id              String                 @id
+  name            String
+  slug            String                 @unique
+  sku             String                 @unique
+  description     String
+  priceCents      Int
+  stock           Int
+  active          Boolean                @default(true)
+  metadata        Json
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  images          ProductImage[]
+  compatibilities ProductCompatibility[]
+  cartItems       CartItem[]
+  favorites       Favorite[]
+  orderItems      OrderItem[]
+  categoryId      String?
+  category        Category? @relation(fields:[categoryId],references:[id],onDelete:SetNull)
+  @@index([categoryId])
+}
+
+model Category {
+ id String @id @default(cuid())
+ name String
+ slug String @unique
+ active Boolean @default(true)
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ products Product[]
+}
+
+model StoreSetting {
+ key String @id
+ value String
+ updatedAt DateTime @updatedAt
+}
+
+model AdminAudit {
+ id String @id @default(cuid())
+ actorId String
+ action String
+ entityType String
+ entityId String
+ details Json
+ createdAt DateTime @default(now())
+ actor User @relation(fields:[actorId],references:[id],onDelete:Restrict)
+ @@index([entityType,entityId,createdAt])
+ @@index([actorId,createdAt])
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  imageUrl  String
+  position  Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, position])
+}
+
+model ProductCompatibility {
+  id        String  @id @default(cuid())
+  productId String
+  brand     String
+  model     String
+  version   String?
+  yearFrom  Int
+  yearTo    Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([brand, model, yearFrom, yearTo])
+}
+
+model Cart {
+  id        String      @id @default(cuid())
+  userId    String      @unique
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  merges    CartMerge[]
+}
+
+model CartMerge {
+  id        String   @id @default(cuid())
+  cartId    String
+  mergeKey  String
+  createdAt DateTime @default(now())
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, mergeKey])
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  productId String
+  quantity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@unique([cartId, productId])
+}
+
+model Favorite {
+  id        String  @id @default(cuid())
+  userId    String
+  productId String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@unique([userId, productId])
+}
+
+model Coupon {
+  id           String             @id @default(cuid())
+  code         String             @unique
+  type         CouponType
+  value        Int
+  minimumCents Int                @default(0)
+  usageLimit   Int?
+  startsAt     DateTime?
+  expiresAt    DateTime?
+  active       Boolean            @default(true)
+  redemptions  CouponRedemption[]
+}
+
+model CouponRedemption {
+  id        String   @id @default(cuid())
+  couponId  String
+  userId    String
+  orderId   String   @unique
+  createdAt DateTime @default(now())
+  coupon    Coupon   @relation(fields: [couponId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  order     Order    @relation(fields: [orderId], references: [id])
+
+  @@index([couponId, userId])
+}
+
+model Order {
+  id                  String            @id @default(cuid())
+  userId              String
+  orderNumber         String            @unique
+  idempotencyKey      String
+  status              OrderStatus       @default(PENDING)
+  fulfillmentType     FulfillmentType
+  paymentMethod       PaymentMethod
+  paymentStatus       PaymentStatus     @default(PENDING)
+  subtotalCents       Int
+  discountCents       Int
+  shippingCents       Int
+  totalCents          Int
+  stockRestoredAt     DateTime?
+  counterPayment CounterPayment?
+  events OrderEvent[]
+  pickupCodeHash      String?
+  pickedUpAt          DateTime?
+  pickedUpById        String?
+  pickupAttempts      Int @default(0)
+  pickupLockedUntil   DateTime?
+  pickedUpBy          User? @relation("PickupEmployee", fields: [pickedUpById], references: [id], onDelete: Restrict, map: "Order_pickup_employee_fkey")
+  pickupCodeEncrypted String?
+  addressSnapshot     Json?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  user                User              @relation(fields: [userId], references: [id])
+  items               OrderItem[]
+  redemption          CouponRedemption?
+
+  @@unique([userId, idempotencyKey])
+  @@index([userId, createdAt])
+}
+
+model OrderItem {
+  id             String  @id @default(cuid())
+  orderId        String
+  productId      String
+  skuSnapshot    String
+  nameSnapshot   String
+  unitPriceCents Int
+  quantity       Int
+  totalCents     Int
+  order          Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product        Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+}
+
+// Permanent reservations survive order removal. Never store plaintext codes.
+model PickupCodeReservation {
+  codeHash String @id
+  orderId String? @unique
+  createdAt DateTime @default(now())
+  consumedAt DateTime?
+}
+
+model CounterPayment {
+ id String @id @default(cuid())
+ orderId String @unique
+ method PaymentMethod
+ amountCents Int
+ employeeId String
+ createdAt DateTime @default(now())
+ order Order @relation(fields:[orderId],references:[id],onDelete:Cascade)
+ employee User @relation(fields:[employeeId],references:[id],onDelete:Restrict)
+}
+model OrderEvent {
+ id String @id @default(cuid())
+ orderId String
+ actorId String
+ type String
+ details Json
+ createdAt DateTime @default(now())
+ order Order @relation(fields:[orderId],references:[id],onDelete:Cascade)
+ actor User @relation(fields:[actorId],references:[id],onDelete:Restrict)
+ @@index([orderId,createdAt])
+}

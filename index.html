@@ -149,7 +149,7 @@
         </div>
         <div class="contato-card revelar">
           <h3>Venha retirar na loja</h3>
-          <div class="mapa-falso" id="mapa-falso" role="img" aria-label="Localização aproximada da loja"></div>
+          <div class="mapa" id="mapa-loja" data-mapa aria-label="Mapa do endereço de retirada"></div>
           <p class="texto-3 micro mt-3 mb-0" id="texto-endereco"></p>
         </div>
       </div>
@@ -163,10 +163,16 @@
 <script type="module">
   import { montarShell, atualizarContadorCarrinho } from './assets/js/shell.js';
   import { montarHome } from './assets/js/pagina-home.js';
+  import { ligarMapas } from './assets/js/mapa.js';
+  import { carregarCatalogo } from './assets/js/catalogo-api.js';
+  import { inicializarComercio } from './assets/js/carrinho.js';
 
-  montarShell({ pagina: 'inicio', raiz: '.' });
+  await montarShell({ pagina: 'inicio', raiz: '.' });
+  await carregarCatalogo();
+  await inicializarComercio().catch(() => false);
   montarHome();
   atualizarContadorCarrinho();
+  ligarMapas();
 </script>
 
 </body>

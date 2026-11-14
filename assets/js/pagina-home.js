@@ -11,12 +11,13 @@
 import {
   LOJA, CATEGORIAS, PRODUTOS, AVALIACOES, FAQ, produtosDaCategoria, produtoServeEm,
   ehUniversal, rotuloMoto, MARCAS,
+  enderecoEmLinha,
 } from './dados.js';
 import { icone, esc, prepararRevelar, cascata, temDesconto, descontoPct, moeda } from './utils.js';
 import { htmlHero, ligarHero } from './hero.js';
 import { htmlLocalizador, ligarLocalizador } from './localizador.js';
 import {
-  cardProduto, blocoFaq, cardAvaliacao, marqueeMarcas, tituloSecao, estadoVazio,
+  cardProduto, blocoFaq, cardAvaliacao, marqueeMarcas, ligarMarquee, tituloSecao, estadoVazio,
 } from './componentes.js';
 import { midiaProduto } from './artes.js';
 import { moto as motoStore } from './carrinho.js';
@@ -30,7 +31,13 @@ export function montarHome() {
 
   /* --------------------------------------------------- 2. faixa marcas --- */
   const alvoMarcas = document.getElementById('faixa-marcas');
-  if (alvoMarcas) alvoMarcas.innerHTML = marqueeMarcas(MARCAS.map((m) => m.nome));
+  if (alvoMarcas) {
+    alvoMarcas.innerHTML = marqueeMarcas(MARCAS.map((m) => m.nome));
+    /* mede a largura real de um ciclo e ajusta cópias + deslocamento.
+       Depende do layout já estar pintado — por isso o rAF. */
+    requestAnimationFrame(() => ligarMarquee());
+    window.addEventListener('resize', () => ligarMarquee());
+  }
 
   /* ---------------------------------------------------- 3. localizador -- */
   const alvoLocal = document.getElementById('localizador-container');
@@ -52,10 +59,10 @@ export function montarHome() {
     const qtd = produtosDaCategoria(c.slug).length;
     return `
     <a class="categoria-card revelar" href="catalogo.html?categoria=${esc(c.slug)}">
-      <span class="categoria-card__midia caixa-foto">${midiaProduto({ foto: c.foto, nome: c.nome })}</span>
+      <span class="categoria-card__midia caixa-foto">${midiaProduto({ foto: c.foto, nome: c.nome })}<span class="brilho" aria-hidden="true"></span></span>
       <span class="categoria-card__corpo">
         <span>
-          <span class="categoria-card__nome">${esc(c.nome)}</span>
+          <span class="categoria-card__nome" title="${esc(c.nome)}">${esc(c.nome)}</span>
           <span class="categoria-card__qtd">${qtd} ${qtd === 1 ? 'produto' : 'produtos'}</span>
         </span>
         <span class="categoria-card__seta">${icone('seta', 16)}</span>
@@ -154,7 +161,7 @@ export function montarHome() {
   alvoBen.innerHTML = [
     { icone: 'check', titulo: 'Peças certas', texto: 'Filtro por marca, modelo, versão e ano. Menos troca e menos devolução.' },
     { icone: 'loja', titulo: 'Retirada rápida', texto: 'Peça reservada com código. Você apresenta no balcão e paga na hora de retirar.' },
-    { icone: 'caminhao', titulo: 'Envio para todo Brasil', texto: 'Transportadoras com prazo e valor à vista antes de fechar o pedido.' },
+    { icone: 'caminhao', titulo: 'Entrega em preparação', texto: 'No momento, os pedidos estão disponíveis para retirada na loja. Frete e entrega ainda não estão disponíveis.' },
     { icone: 'escudo', titulo: 'Compra segura', texto: 'Garantia do fabricante em peças e acessórios. Nota fiscal em todo pedido.' },
   ].map((b) => `
     <div class="beneficio revelar">
@@ -205,38 +212,10 @@ export function montarHome() {
   }
   const alvoEnd = document.getElementById('texto-endereco');
   if (alvoEnd) {
-    alvoEnd.textContent = `${LOJA.endereco.rua}, ${LOJA.endereco.bairro} — ${LOJA.endereco.cidade}/${LOJA.endereco.estado} · CEP ${LOJA.endereco.cep}`;
+    alvoEnd.textContent = enderecoEmLinha(LOJA);
   }
-  const alvoMapa = document.getElementById('mapa-falso');
-  if (alvoMapa) alvoMapa.innerHTML = mapaIlustrado();
+  /* O mapa em si é montado por assets/js/mapa.js (mapa real, OpenStreetMap),
+     chamado pela página depois que este bloco termina — ver ligarMapas(). */
 
   prepararRevelar();
-}
-
-/* --------------------------------------------------------------- mapa ---- */
-function mapaIlustrado() {
-  return `<svg viewBox="0 0 400 250" role="img" aria-label="Mapa ilustrado da região da loja" style="width:100%;height:100%;display:block">
-    <rect width="400" height="250" fill="#EFF2F6"/>
-    <path d="M0 168 h400" stroke="#DFE4EC" stroke-width="26"/>
-    <path d="M0 168 h400" stroke="#FFFFFF" stroke-width="3" stroke-dasharray="14 12"/>
-    <path d="M118 0 v250" stroke="#DFE4EC" stroke-width="20"/>
-    <path d="M118 0 v250" stroke="#FFFFFF" stroke-width="3" stroke-dasharray="14 12"/>
-    <path d="M278 0 v250" stroke="#E6EAF0" stroke-width="14"/>
-    <g fill="#E3E8EF">
-      <rect x="140" y="40" width="60" height="46" rx="5"/>
-      <rect x="216" y="40" width="46" height="46" rx="5"/>
-      <rect x="140" y="192" width="72" height="40" rx="5"/>
-      <rect x="230" y="196" width="52" height="36" rx="5"/>
-      <rect x="24" y="52" width="66" height="42" rx="5"/>
-      <rect x="24" y="200" width="66" height="34" rx="5"/>
-      <rect x="300" y="52" width="72" height="42" rx="5"/>
-      <rect x="300" y="200" width="72" height="34" rx="5"/>
-    </g>
-    <path d="M40 226 q60 -30 120 -20" stroke="#D2D8E1" stroke-width="4" fill="none"/>
-    <g transform="translate(196,116)">
-      <path d="M0 0a26 26 0 1 1 0.1 0z" fill="#FFD400" stroke="#0C1425" stroke-width="4"/>
-      <circle cx="0" cy="0" r="9" fill="#0C1425"/>
-      <path d="M0 26 v22" stroke="#0C1425" stroke-width="4"/>
-    </g>
-  </svg>`;
 }

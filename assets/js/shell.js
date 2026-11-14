@@ -10,8 +10,9 @@
 
 import { LOJA } from './dados.js';
 import { icone, esc, $, $$, avisar } from './utils.js';
-import { carrinho, moto as motoStore } from './carrinho.js';
+import { carrinho, favoritos, moto as motoStore, aguardarSincronizacao } from './carrinho.js';
 import { htmlMotoHeader, htmlMotoAtiva } from './localizador.js';
+import {carregarLoja} from './loja-api.js';
 
 export const MENU = [
   { id: 'inicio',      rotulo: 'Início',            href: 'index.html' },
@@ -42,7 +43,7 @@ function htmlHeader(pagina, raiz) {
 <div class="topo">
   <div class="container">
     <div class="topo__itens">
-      <span class="topo__item">${icone('caminhao', 14)} Envio para todo o Brasil</span>
+      <span class="topo__item">${icone('loja', 14)} Pedidos para retirada</span>
       <span class="topo__item">${icone('loja', 14)} Retire na loja em ${esc(LOJA.cidade)}</span>
     </div>
     <div class="topo__itens">
@@ -134,7 +135,7 @@ function htmlFooter(raiz) {
             <span class="marca__tag">Peças e acessórios</span>
           </span>
         </a>
-        <p class="footer__sobre">${esc(LOJA.slogan)}. Encontre a peça pela sua moto, retire na loja ou receba em casa.</p>
+        <p class="footer__sobre">${esc(LOJA.slogan)}. Encontre a peça certa e reserve para retirar na loja.</p>
       </div>
 
       ${colunas
@@ -184,7 +185,8 @@ function htmlBarraMobile(pagina, raiz) {
 }
 
 /* --------------------------------------------------------------- montagem -- */
-export function montarShell({ pagina = '', raiz = '.', titulo } = {}) {
+export async function montarShell({ pagina = '', raiz = '.', titulo } = {}) {
+  await carregarLoja();
   if (titulo) document.title = `${titulo} — ${LOJA.nome}`;
 
   const topo = document.getElementById('topo');
@@ -210,6 +212,20 @@ export function montarShell({ pagina = '', raiz = '.', titulo } = {}) {
 
 /* --------------------------------------------------------- comportamentos -- */
 function ligarComportamentos() {
+  // Finish authenticated writes before a same-tab navigation can cancel them.
+  document.addEventListener('click', async (event) => {
+    const link = event.target.closest('a[href]');
+    if (!link || event.defaultPrevented || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || link.hasAttribute('download') || (link.target && link.target !== '_self')) return;
+    const destination = new URL(link.href, location.href);
+    if (destination.origin !== location.origin || (destination.pathname === location.pathname && destination.search === location.search && destination.hash)) return;
+    event.preventDefault();
+    await aguardarSincronizacao().catch(() => {});
+    location.assign(destination.href);
+  });
+  window.addEventListener('comerciochange', atualizarContadorCarrinho);
+  window.addEventListener('comercioerro', (ev) => {
+    avisar(typeof ev.detail === 'string' ? ev.detail : ev.detail?.message || 'Não foi possível sincronizar. Tente novamente.', 'erro');
+  });
   /* sombra no header ao rolar — mesmo comportamento da referência */
   const cabecalho = document.getElementById('cabecalho');
   if (cabecalho) {
@@ -282,28 +298,72 @@ function ligarComportamentos() {
   });
 
   /* carrinho e favoritos aparecem em todas as páginas */
-  document.addEventListener('click', (ev) => {
+  document.addEventListener('click', async (ev) => {
     const add = ev.target.closest('[data-add-carrinho]');
     if (add) {
       ev.preventDefault();
+      if (add.disabled) return;
+      add.disabled = true;
+      try {
       const id = add.getAttribute('data-add-carrinho');
       const qtd = Number(add.getAttribute('data-qtd') || 1);
       const r = carrinho.adicionar(id, qtd);
-      if (r && r.ok) avisar(r.mensagem || 'Produto adicionado ao carrinho.');
-      else avisar((r && r.mensagem) || 'Não foi possível adicionar.', 'erro');
+      if (r && r.ok) {
+        await aguardarSincronizacao();
+        avisar(r.mensagem || 'Produto adicionado ao carrinho.');
+        /* O contador do cabeçalho precisa mudar NA HORA. Antes ele só era
+           atualizado ao carregar a página, então dava para adicionar três
+           itens e o cabeçalho continuar marcando o valor antigo. */
+        atualizarContadorCarrinho();
+        marcarAdicionado(add);
+      } else {
+        avisar((r && r.mensagem) || 'Não foi possível adicionar.', 'erro');
+      }
+      } catch (error) { avisar(error.message, 'erro'); }
+      finally { add.disabled = false; }
       return;
     }
     const fav = ev.target.closest('[data-favoritar]');
     if (fav) {
       ev.preventDefault();
+      if (fav.disabled) return;
+      fav.disabled = true;
       const id = fav.getAttribute('data-favoritar');
-      const marcado = carrinho.alternarFavorito(id);
+      /* `favoritos` é o dono da lista; `carrinho.alternarFavorito` nunca
+         existiu e o clique quebrava com erro no console. */
+      try {
+      favoritos.alternar(id);
+      await aguardarSincronizacao();
+      const marcado = favoritos.ehFavorito(id);
       fav.setAttribute('aria-pressed', marcado ? 'true' : 'false');
+      fav.setAttribute('aria-label',
+        (marcado ? 'Remover ' : 'Salvar ') + (fav.getAttribute('data-nome') || 'produto') +
+        (marcado ? ' dos favoritos' : ' nos favoritos'));
       const txt = fav.querySelector('[data-rotulo-favorito]');
       if (txt) txt.textContent = marcado ? 'Salvo' : 'Salvar';
       avisar(marcado ? 'Salvo nos favoritos.' : 'Removido dos favoritos.');
+      } catch (error) {
+        fav.setAttribute('aria-pressed', favoritos.ehFavorito(id) ? 'true' : 'false');
+        avisar(error.message, 'erro');
+      } finally { fav.disabled = false; }
     }
   });
+}
+
+/* Confirmação visual no próprio botão: ele vira "Adicionado" por um instante.
+   É o retorno que o dono pediu — o cliente vê que entrou no carrinho sem sair
+   da página em que estava. */
+function marcarAdicionado(botao) {
+  if (!botao || botao.getAttribute('data-confirmando') === '1') return;
+  const original = botao.innerHTML;
+  botao.setAttribute('data-confirmando', '1');
+  botao.classList.add('btn--adicionado');
+  botao.innerHTML = `${icone('checkCirculo', 17)} Adicionado`;
+  setTimeout(() => {
+    botao.innerHTML = original;
+    botao.classList.remove('btn--adicionado');
+    botao.removeAttribute('data-confirmando');
+  }, 1400);
 }
 
 /* --------------------------------------------------------------- drawers -- */

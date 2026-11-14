@@ -52,8 +52,10 @@
 <script type="module">
   import { montarShell } from './assets/js/shell.js';
   import { montarLocalizador } from './assets/js/pagina-localizador.js';
+  import {carregarCatalogo} from './assets/js/catalogo-api.js';
 
-  montarShell({ pagina: 'localizador', raiz: '.' });
+  await montarShell({ pagina: 'localizador', raiz: '.' });
+  await carregarCatalogo();
   montarLocalizador();
 </script>
 

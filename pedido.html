@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="assets/css/tokens.css">
 <link rel="stylesheet" href="assets/css/app.css">
 <link rel="stylesheet" href="assets/css/art.css">
+<link rel="stylesheet" href="assets/css/comercio.css">
 </head>
 <body data-pagina="pedido" data-raiz=".">
 
@@ -28,8 +29,8 @@
   import { montarShell } from './assets/js/shell.js';
   import { montarPedido } from './assets/js/pagina-pedido.js';
 
-  montarShell({ pagina: 'pedido', raiz: '.' });
-  montarPedido();
+  await montarShell({ pagina: 'pedido', raiz: '.' });
+  await montarPedido();
 </script>
 
 </body>

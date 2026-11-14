@@ -1,0 +1,18 @@
+/* Customer commerce layouts retain the existing palette and component styles. */
+.carrinho > *, .checkout > *, .item-carrinho > *, .grade-campos > *, .confirmacao > * { min-width: 0; }
+.carrinho .espaco-entre { flex-wrap: wrap; gap: 12px; }
+.resumo__linha > span { min-width: 0; overflow-wrap: anywhere; }
+.resumo__linha > span:last-child { text-align: right; }
+.checkout .entrada, .checkout select { max-width: 100%; }
+.confirmacao .painel-dados__linha .val { overflow-wrap: anywhere; }
+@media (max-width: 430px) {
+  .checkout .grade-campos { grid-template-columns: minmax(0, 1fr); }
+  .checkout .grade-campos > .campo { grid-column: 1 !important; }
+  .checkout .bloco, .checkout .resumo, .carrinho .resumo { padding: 18px; }
+  .checkout .bloco__titulo { gap: 10px; }
+  .checkout .bloco__titulo h2 { font-size: 1.08rem; }
+  .confirmacao .codigo-retirada__acoes { flex-wrap: wrap; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .checkout *, .carrinho *, .confirmacao * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

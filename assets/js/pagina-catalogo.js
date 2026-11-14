@@ -88,7 +88,7 @@ function aplicar(e, moto) {
   else if (e.compat === 'minhamoto' && moto) lista = lista.filter((p) => produtoServeEm(p, moto));
 
   /* Com moto ativa: só o que serve nela (universal entra sempre). */
-  if (e.comMoto && moto && e.compat !== 'universal' && e.compat !== 'especifica') {
+  if (e.comMoto && moto) {
     lista = lista.filter((p) => produtoServeEm(p, moto));
   }
 
@@ -170,7 +170,7 @@ function desenharFiltros(e, moto) {
            <span><strong>${esc(rotuloMoto(moto))}</strong><br>
            <span class="micro texto-3">${PRODUTOS.filter((p) => produtoServeEm(p, moto)).length} produtos compatíveis</span></span>
          </div>
-         <button class="btn btn--contorno btn--bloco btn--pequeno mt-2" type="button" data-limpar-moto>Trocar de moto</button>`
+         <a class="btn btn--contorno btn--bloco btn--pequeno mt-2" href="localizador.html">Trocar de moto</a>`
       : `<p class="micro texto-3 mb-2">Diga qual é a sua moto e mostramos só o que serve nela.</p>
          <a class="btn btn--bloco btn--pequeno" href="localizador.html">${icone('moto', 15)} Escolher minha moto</a>`;
   }
@@ -322,11 +322,13 @@ export function montarCatalogo() {
     if (ev.target.closest('[data-abrir-filtros]')) {
       const p = document.getElementById('painel-filtros');
       if (p) p.setAttribute('data-aberto', 'true');
+      document.querySelector('[data-abrir-filtros]')?.setAttribute('aria-expanded', 'true');
       return;
     }
     if (ev.target.closest('[data-fechar-filtros]')) {
       const p = document.getElementById('painel-filtros');
       if (p) p.setAttribute('data-aberto', 'false');
+      document.querySelector('[data-abrir-filtros]')?.setAttribute('aria-expanded', 'false');
       return;
     }
     if (ev.target.closest('[data-limpar-moto]')) {
@@ -350,6 +352,8 @@ export function montarCatalogo() {
   });
 
   redesenhar();
+  const abrirFiltros = document.querySelector('[data-abrir-filtros]');
+  if (abrirFiltros) { abrirFiltros.disabled = false; abrirFiltros.removeAttribute('aria-busy'); }
 }
 
 function alternar(lista, v) {

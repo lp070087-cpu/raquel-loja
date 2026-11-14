@@ -25,7 +25,7 @@ export function montarLocalizador() {
     vantagens.innerHTML = [
       { i: 'escudo', t: 'Peça certa, sem tentativa', d: 'A compatibilidade é por marca, modelo e ano — a mesma informação que a loja usa no balcão.' },
       { i: 'catalogo', t: 'Peças e acessórios juntos', d: 'Peças mecânicas por moto e equipamento universal, tudo na mesma busca.' },
-      { i: 'loja', t: 'Retira hoje ou recebe em casa', d: 'Reserve com código de retirada ou receba pela transportadora.' },
+      { i: 'loja', t: 'Reserve e retire na loja', d: 'Apresente o código e pague presencialmente, diretamente no balcão.' },
     ].map(
       (v) => `
       <div class="beneficio revelar">

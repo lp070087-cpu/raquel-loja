@@ -1,10 +1,10 @@
 /* ============================================================================
    CARRINHO / ESTADO — carrinho, favoritos, pedidos, moto e cliente
    ----------------------------------------------------------------------------
-   Tudo vive no navegador (localStorage) para a apresentação funcionar sem
-   servidor. Se o navegador bloquear o armazenamento (janela anônima, por
-   exemplo), cai para memória e continua funcionando — só não sobrevive ao
-   recarregar a página.
+   Clientes autenticados usam carrinho e favoritos do servidor. O carrinho
+   anônimo e a seleção de moto continuam disponíveis no navegador. Os métodos
+   antigos de pedidos abaixo são exclusivos da demonstração administrativa;
+   checkout e conta do cliente consultam a API.
 
    ---------------------------------------------------------------------------
    O QUE MUDA NA VERSÃO REAL  (leia antes de integrar)
@@ -21,7 +21,35 @@
       (o cliente pode alterar o preço antes de enviar).
    ============================================================================ */
 
-import { PRODUTOS, CHAVES, LOJA, produtoPorId } from './dados.js';
+import { PRODUTOS, CHAVES, LOJA, produtoPorId, ehUniversal } from './dados.js';
+import { api } from './api.js';
+import { comercio, inicializarComercio as iniciar, sincronizarConta as sincronizar, esquecerConta, aguardarSincronizacao } from './comercio-api.js';
+export { esquecerConta, aguardarSincronizacao };
+const confirmarMescla = {
+  carrinho: () => gravar(CHAVES.carrinho, []),
+  favorito: id => gravar(CHAVES.favoritos, ler(CHAVES.favoritos, []).filter(i => i !== id)),
+};
+
+export async function sincronizarConta() {
+  const ok = await sincronizar(ler(CHAVES.carrinho, []), ler(CHAVES.favoritos, []), confirmarMescla);
+  // Remove anonymous data only after a confirmed merge, so it cannot be merged twice.
+  if (ok) {
+    gravar(CHAVES.carrinho, []);
+    gravar(CHAVES.favoritos, []);
+  }
+  return ok;
+}
+export async function inicializarComercio() {
+  const ok = await iniciar(ler(CHAVES.carrinho, []), ler(CHAVES.favoritos, []), confirmarMescla);
+  if (ok) { gravar(CHAVES.carrinho, []); gravar(CHAVES.favoritos, []); }
+  return ok;
+}
+function salvarCarrinho(lista, id) {
+  if (!comercio.autenticado()) return gravar(CHAVES.carrinho, lista);
+  comercio.atualizarItens(lista);
+  const quantity = lista.find(i => i.id === id)?.qtd || 0;
+  comercio.enfileirar(() => api('/cart/items/' + encodeURIComponent(id), { method: 'PUT', body: { quantity } })).catch(() => {});
+}
 
 /* --------------------------------------------------------- armazenamento -- */
 let memoria = {};
@@ -70,6 +98,7 @@ export function armazenamentoDisponivel() {
    e não existe preço velho congelado num carrinho antigo. */
 export const carrinho = {
   itens() {
+    if (comercio.autenticado()) return comercio.itens();
     const lista = ler(CHAVES.carrinho, []);
     if (!Array.isArray(lista)) return [];
     // descarta item que não existe mais no catálogo
@@ -79,7 +108,7 @@ export const carrinho = {
   adicionar(id, qtd = 1) {
     const produto = produtoPorId(id);
     if (!produto) return { ok: false, mensagem: 'Produto não encontrado.' };
-    const n = Math.max(1, Math.floor(Number(qtd) || 1));
+    const n = Math.min(99, Math.max(1, Math.floor(Number(qtd) || 1)));
     if (Number(produto.estoque) <= 0) {
       return { ok: false, mensagem: 'Produto sem estoque no momento.' };
     }
@@ -87,9 +116,9 @@ export const carrinho = {
     const existente = lista.find((i) => i.id === id);
     if (existente) {
       const desejado = existente.qtd + n;
-      const limite = Number(produto.estoque);
+      const limite = Math.min(99, Number(produto.estoque));
       existente.qtd = Math.min(desejado, limite);
-      gravar(CHAVES.carrinho, lista);
+      salvarCarrinho(lista, id);
       return {
         ok: true,
         mensagem:
@@ -99,7 +128,7 @@ export const carrinho = {
       };
     }
     lista.push({ id, qtd: Math.min(n, Number(produto.estoque)) });
-    gravar(CHAVES.carrinho, lista);
+    salvarCarrinho(lista, id);
     return { ok: true, mensagem: `${produto.nome} foi adicionado ao carrinho.` };
   },
 
@@ -109,25 +138,31 @@ export const carrinho = {
     const lista = this.itens();
     const item = lista.find((i) => i.id === id);
     if (!item) return { ok: false, mensagem: 'Item não está no carrinho.' };
-    const limite = Number(produto.estoque) || 0;
+    const limite = Math.min(99, Number(produto.estoque) || 0);
     let n = Math.floor(Number(qtd));
     if (!isFinite(n) || n < 1) n = 1;
     if (n > limite) {
       item.qtd = limite;
-      gravar(CHAVES.carrinho, lista);
+      salvarCarrinho(lista, id);
       return { ok: false, mensagem: `Só há ${limite} unidades em estoque.` };
     }
     item.qtd = n;
-    gravar(CHAVES.carrinho, lista);
+    salvarCarrinho(lista, id);
     return { ok: true };
   },
 
   remover(id) {
-    gravar(CHAVES.carrinho, this.itens().filter((i) => i.id !== id));
+    salvarCarrinho(this.itens().filter((i) => i.id !== id), id);
     return { ok: true, mensagem: 'Item removido do carrinho.' };
   },
 
   limpar() {
+    if (comercio.autenticado()) {
+      const ids = this.itens().map(i => i.id);
+      comercio.atualizarItens([]);
+      ids.forEach(id => salvarCarrinho([], id));
+      return;
+    }
     gravar(CHAVES.carrinho, []);
   },
 
@@ -139,7 +174,7 @@ export const carrinho = {
   detalhados() {
     return this.itens()
       .map((i) => {
-        const p = produtoPorId(i.id);
+        const p = produtoPorId(i.id) || { id: i.id, nome: 'Produto indisponível — remova do carrinho', preco: 0, estoque: 0 };
         const preco = Number(p.preco) || 0;
         const qtd = Number(i.qtd) || 0;
         return {
@@ -175,6 +210,7 @@ export const carrinho = {
 /* ----------------------------------------------------------- favoritos ---- */
 export const favoritos = {
   lista() {
+    if (comercio.autenticado()) return comercio.favoritos();
     const l = ler(CHAVES.favoritos, []);
     if (!Array.isArray(l)) return [];
     return l.filter((id) => !!produtoPorId(id));
@@ -187,7 +223,10 @@ export const favoritos = {
     const i = lista.indexOf(id);
     if (i === -1) lista.push(id);
     else lista.splice(i, 1);
-    gravar(CHAVES.favoritos, lista);
+    if (comercio.autenticado()) {
+      comercio.atualizarFavoritos(lista);
+      comercio.enfileirar(() => api('/favorites/' + encodeURIComponent(id), { method: i === -1 ? 'POST' : 'DELETE' })).catch(() => {});
+    } else gravar(CHAVES.favoritos, lista);
     return i === -1;
   },
   produtos() {
@@ -196,12 +235,45 @@ export const favoritos = {
 };
 
 /* -------------------------------------------------------- moto do cliente -- */
+/*
+   Assinatura de "a moto mudou".
+   Existe porque a compatibilidade pode mudar SEM trocar de tela — o
+   localizador é um formulário em drawer. Sem este aviso, o checkout ficaria
+   mostrando "compatibilidade não confirmada" depois de a cliente já ter
+   escolhido a moto.
+
+   É uma LISTA DE FUNÇÕES, e não um evento no `document`, de propósito:
+   `CustomEvent` é do navegador e não existe em todo ambiente. A primeira
+   versão usava um evento dentro de `try/catch` e o `catch` engolia a falha em
+   silêncio — o aviso simplesmente não atualizava e nada acusava. Chamada
+   direta não tem esse buraco.
+*/
+const assinantesMoto = [];
+
+/** Registra um retorno chamado sempre que a moto ativa mudar. */
+export function aoTrocarMoto(fn) {
+  if (typeof fn === 'function' && assinantesMoto.indexOf(fn) === -1) {
+    assinantesMoto.push(fn);
+  }
+  return fn;
+}
+
+function anunciarTrocaDeMoto(m) {
+  assinantesMoto.forEach((fn) => {
+    try { fn(m); } catch (e) { /* um assinante com erro não derruba os outros */ }
+  });
+}
+
 export const moto = {
   ler() {
     const m = ler(CHAVES.moto, null);
     if (!m || !m.marca || !m.modelo) return null;
     return m;
   },
+  /* Guarda marca, modelo, VERSÃO e ano.
+     A versão precisa entrar aqui: sem ela, "CG 160 Fan 2024" virava só
+     "CG 160 2024" e a compatibilidade que distingue Fan de Titan se perdia
+     ao recarregar a página. Foi um defeito real. */
   /* Guarda marca, modelo, VERSÃO e ano.
      A versão precisa entrar aqui: sem ela, "CG 160 Fan 2024" virava só
      "CG 160 2024" e a compatibilidade que distingue Fan de Titan se perdia
@@ -216,10 +288,12 @@ export const moto = {
       cilindrada: m.cilindrada || '',
     };
     gravar(CHAVES.moto, guardado);
+    anunciarTrocaDeMoto(guardado);
     return guardado;
   },
   limpar() {
     gravar(CHAVES.moto, null);
+    anunciarTrocaDeMoto(null);
   },
 };
 
@@ -358,12 +432,16 @@ export function montarPedido({
   endereco,
   freteEscolhido,
   pagamento,
+  desconto = 0,        /* valor do cupom, já calculado por quem chama */
+  cupomCodigo = '',    /* só para registrar no pedido qual cupom foi usado */
 }) {
   const itens = carrinho.detalhados();
   const subtotal = Math.round(itens.reduce((s, i) => s + i.subtotal, 0) * 100) / 100;
   const entrega = tipo === 'entrega';
   const valorFrete = entrega && freteEscolhido ? Number(freteEscolhido.valor) || 0 : 0;
-  const total = Math.round((subtotal + valorFrete) * 100) / 100;
+  /* O desconto nunca passa do subtotal: não existe pedido com total negativo. */
+  const valorDesconto = Math.min(Math.max(0, Number(desconto) || 0), subtotal);
+  const total = Math.round((subtotal - valorDesconto + valorFrete) * 100) / 100;
 
   const pedido = {
     id: gerarNumeroPedido(),
@@ -377,6 +455,8 @@ export function montarPedido({
     },
     itens,
     subtotal,
+    desconto: valorDesconto,
+    cupom: valorDesconto > 0 ? String(cupomCodigo || '').toUpperCase() : null,
     frete: valorFrete,
     total,
     pagamento: entrega
@@ -449,7 +529,7 @@ export function buscarProdutos(termo, lista) {
       p.categoria,
       p.descricao,
       (p.compat || []).map((c) => `${c.marca} ${c.modelo}`).join(' '),
-      'universal',
+      ehUniversal(p) ? 'universal' : '',
     ]
       .join(' ')
       .toLowerCase();

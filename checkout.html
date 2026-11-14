@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="assets/css/tokens.css">
 <link rel="stylesheet" href="assets/css/app.css">
 <link rel="stylesheet" href="assets/css/art.css">
+<link rel="stylesheet" href="assets/css/comercio.css">
 </head>
 <body data-pagina="checkout" data-raiz=".">
 
@@ -38,9 +39,11 @@
 <script type="module">
   import { montarShell } from './assets/js/shell.js';
   import { montarCheckout } from './assets/js/pagina-checkout.js';
+  import { carregarCatalogo } from './assets/js/catalogo-api.js';
 
-  montarShell({ pagina: 'checkout', raiz: '.' });
-  montarCheckout();
+  await montarShell({ pagina: 'checkout', raiz: '.' });
+  await carregarCatalogo();
+  await montarCheckout();
 </script>
 
 </body>

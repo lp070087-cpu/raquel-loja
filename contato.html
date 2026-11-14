@@ -37,9 +37,11 @@
 <script type="module">
   import { montarShell } from './assets/js/shell.js';
   import { montarContato } from './assets/js/pagina-contato.js';
+  import { ligarMapas } from './assets/js/mapa.js';
 
-  montarShell({ pagina: 'contato', raiz: '.' });
+  await montarShell({ pagina: 'contato', raiz: '.' });
   montarContato();
+  ligarMapas();
 </script>
 
 </body>

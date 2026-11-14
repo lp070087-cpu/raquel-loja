@@ -21,7 +21,7 @@
      • para sozinho depois de 40 s sem interação e quando a aba perde o foco.
    ============================================================================ */
 
-import { PRODUTOS, IMAGENS_BANNER, precoPix } from './dados.js';
+import { PRODUTOS, IMAGENS_BANNER } from './dados.js';
 import { icone, moeda, embaralhar, esc } from './utils.js';
 
 export const INTERVALO_MS = 4200;
@@ -70,7 +70,7 @@ export function htmlHero() {
         <span class="hero__badge hero__entra hero__entra--1">${icone('moto', 14)} Tudo para sua moto</span>
 
         <h1 class="hero__titulo hero__entra hero__entra--2" id="titulo-hero">
-          Sua moto pronta<br>para <span class="destaque">qualquer caminho</span>.
+          Sua moto pronta para <span class="destaque">qualquer caminho.</span>
         </h1>
 
         <p class="hero__sub hero__entra hero__entra--3">
@@ -90,28 +90,42 @@ export function htmlHero() {
         <ul class="hero__beneficios hero__entra hero__entra--5">
           <li>${icone('check', 18)} Peça certa</li>
           <li>${icone('loja', 18)} Retirada rápida</li>
-          <li>${icone('caminhao', 18)} Envio nacional</li>
-          <li>${icone('cartao', 18)} Compra fácil</li>
+          <li>${icone('ferramenta', 18)} Ajuda na escolha</li>
+          <li>${icone('cartao', 18)} Pague na retirada</li>
         </ul>
       </div>
 
       <div class="palco palco--hero hero__entra hero__entra--3" id="palco-hero" aria-label="Produtos em destaque">
-        <span class="palco__area-amarela" aria-hidden="true"></span>
-        <span class="palco__brilho" aria-hidden="true"></span>
 
-        <div class="palco__itens" data-palco-itens>${itens}</div>
+        <!-- ÁREA 1: o círculo. Só imagem — nenhum texto aqui dentro, para a
+             foto nunca cobrir o nome ou o preço. -->
+        <div class="palco__palco">
+          <span class="palco__area-amarela" aria-hidden="true"></span>
+          <span class="palco__brilho" aria-hidden="true"></span>
+          <!-- o card é a "janela" clara: mesmo círculo da moldura e recorta a
+               foto (overflow: hidden). Sem ele a imagem passaria por cima do
+               amarelo; com ele, imagem e moldura leem como uma peça só. -->
+          <div class="palco__card">
+            <div class="palco__itens" data-palco-itens>${itens}</div>
+          </div>
+        </div>
 
-        <span class="palco__selo"><span class="palco__selo-ponto"></span> Em destaque</span>
+        <!-- ÁREA 2: as informações. Em fluxo, abaixo do círculo, dentro de uma
+             barra própria — é o que garante "Em destaque", marca e preço
+             sempre legíveis e nunca embaixo da imagem. -->
+        <div class="palco__info">
+          <span class="palco__selo"><span class="palco__selo-ponto"></span> Em destaque</span>
 
-        <a class="palco__etiqueta" href="produto.html?id=${encodeURIComponent(primeiro.id)}" data-palco-etiqueta>
-          <span class="palco__etiqueta-simbolo">${icone('ferramenta', 18)}</span>
-          <span class="palco__etiqueta-texto">
-            <span class="palco__etiqueta-rotulo" data-palco-cat>${esc(primeiro.marca)}</span>
-            <span class="palco__etiqueta-valor" data-palco-preco>${moeda(primeiro.preco)}</span>
-          </span>
-        </a>
+          <a class="palco__etiqueta" href="produto.html?id=${encodeURIComponent(primeiro.id)}" data-palco-etiqueta>
+            <span class="palco__etiqueta-simbolo">${icone('ferramenta', 18)}</span>
+            <span class="palco__etiqueta-texto">
+              <span class="palco__etiqueta-rotulo" data-palco-cat>${esc(primeiro.marca)}</span>
+              <span class="palco__etiqueta-valor" data-palco-preco>${moeda(primeiro.preco)}</span>
+            </span>
+          </a>
 
-        <div class="palco__pontos" role="tablist" aria-label="Escolher produto em destaque">${pontos}</div>
+          <div class="palco__pontos" role="tablist" aria-label="Escolher produto em destaque">${pontos}</div>
+        </div>
       </div>
 
     </div>

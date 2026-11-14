@@ -33,36 +33,53 @@
 }
 
 /* ============================================================== O PALCO ====
-   A direita do hero. A ALTURA vem daqui — é o que impede o herói de virar
-   tela cheia. `max-height` + `aspect-ratio` mantêm a proporção em qualquer
-   largura sem estourar a primeira dobra.
+   A direita do hero. Duas decisões mandam aqui:
+
+   1) A MOLDURA É UM CÍRCULO. O pedido foi explícito: "borda amarela
+      perfeitamente circular" e "evite espaços brancos quadrados destoando da
+      moldura circular". Então a moldura, o card e o recorte da foto são todos
+      `border-radius: 50%`.
+
+   2) AS INFORMAÇÕES TÊM ÁREA PRÓPRIA. Antes o selo "Em destaque" e a etiqueta
+      de marca/preço eram `position: absolute` por cima do palco — e a foto,
+      que era livre, passava por cima dos textos. Agora o palco é uma COLUNA:
+      em cima o círculo (só imagem), embaixo a faixa de informações (só texto
+      e indicadores). Nada sobrepõe nada em nenhuma largura.
+
+   A ALTURA vem daqui — é o que impede o herói de virar tela cheia.
    ============================================================================ */
 .palco {
   position: relative;
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  max-height: 460px;          /* teto: o herói não cresce além disto */
+  min-width: 0;
+  width: min(100%, var(--palco-max, 460px));
   margin-inline: auto;
+  display: flex; flex-direction: column;
+  gap: clamp(12px, 1.8vw, 18px);
 }
 
-.palco--hero { max-height: 440px; }
+/* ---- o círculo: SÓ imagem ---- */
+.palco__palco {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  /* folga da borda amarela até a borda do card branco */
+  --palco-folga: clamp(10px, 2.6%, 18px);
+}
 
-/* área amarela orgânica — o elemento gráfico da referência */
 .palco__area-amarela {
-  position: absolute;
-  inset: 3% -4% 3% 4%;
-  border-radius: 52% 48% 44% 56% / 46% 52% 48% 54%;
-  background: radial-gradient(120% 110% at 68% 26%, var(--amarelo-claro) 0%, var(--amarelo) 58%, var(--amarelo-forte) 100%);
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(120% 110% at 66% 24%, var(--amarelo-claro) 0%, var(--amarelo) 58%, var(--amarelo-forte) 100%);
   box-shadow: var(--sombra-3);
   animation: respirar 11s ease-in-out infinite;
 }
 @keyframes respirar {
-  0%, 100% { transform: scale(1) rotate(0deg); }
-  50%      { transform: scale(1.02) rotate(-1deg); }
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.02); }
 }
 
 .palco__brilho {
-  position: absolute; inset: 15%; border-radius: 50%;
+  position: absolute; inset: 10%; border-radius: 50%;
   background: conic-gradient(from 0deg,
     rgba(255,255,255,.5) 0deg, transparent 70deg,
     rgba(255,255,255,.32) 150deg, transparent 235deg,
@@ -73,42 +90,72 @@
 }
 @keyframes girar { to { transform: rotate(360deg); } }
 
+/* ---- o card: a "janela" clara, MESMO círculo, que RECORTA a foto ---- */
+.palco__card {
+  position: absolute; inset: var(--palco-folga);
+  border-radius: 50%;
+  background: var(--branco);
+  overflow: hidden;                    /* recorta a foto no círculo */
+  box-shadow: 0 10px 30px rgba(12,20,37,.13);
+  display: grid; place-items: center;
+  z-index: 1;
+}
+
 .palco__itens { position: absolute; inset: 0; }
 
 .palco__item {
-  position: absolute; inset: 8%;
+  position: absolute; inset: 0;
   display: grid; place-items: center;
   opacity: 0;
-  transform: translate3d(30px, 18px, 0) scale(.9) rotate(-3deg);
+  transform: translate3d(22px, 12px, 0) scale(.94);
   transition: opacity 640ms cubic-bezier(.22,.61,.36,1),
               transform 640ms cubic-bezier(.22,.61,.36,1);
   will-change: opacity, transform;
 }
 .palco__item--ativo {
-  opacity: 1; transform: translate3d(0,0,0) scale(1) rotate(0deg);
+  opacity: 1; transform: translate3d(0,0,0) scale(1);
   animation: flutuar 6s ease-in-out infinite .6s;
 }
 .palco__item--saindo {
-  opacity: 0; transform: translate3d(-26px, -16px, 0) scale(.92) rotate(2.4deg);
+  opacity: 0; transform: translate3d(-20px, -10px, 0) scale(.95);
 }
+
+/* ---- A FOTO: um tamanho só para todas as peças --------------------------
+   Caixa quadrada igual para todo mundo, `contain` (nunca deforma) e teto de
+   tamanho — é o que impede uma foto "gigante" de quebrar o layout e o que
+   padroniza produtos que vieram de arquivos com proporções diferentes. */
 .palco__item img {
-  width: 100%; height: 100%; object-fit: contain;
-  mix-blend-mode: multiply;
-  filter: drop-shadow(0 20px 28px rgba(12,20,37,.17));
+  width: 100%; height: 100%; padding: 12%;
+  max-width: none; max-height: none;
+  object-fit: contain;
+  object-position: center;
+  /* The photograph and the circular window share one white surface. A shadow
+     on the rectangular JPEG would reveal its box inside the round frame. */
+  mix-blend-mode: normal;
 }
 @keyframes flutuar {
-  0%, 100% { transform: translate3d(0,0,0) scale(1) rotate(0deg); }
-  50%      { transform: translate3d(0,-8px,0) scale(1.012) rotate(-.7deg); }
+  0%, 100% { transform: translate3d(0,0,0) scale(1); }
+  50%      { transform: translate3d(0,-8px,0) scale(1.012); }
+}
+
+/* ---- a FAIXA DE INFORMAÇÕES: área própria, separada da imagem ---------- */
+.palco__info {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: var(--e3);
+  background: var(--branco);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-g);
+  box-shadow: var(--sombra-2);
+  padding: 10px 12px 10px 10px;
 }
 
 .palco__selo {
-  position: absolute; top: 2%; right: 0;
   display: inline-flex; align-items: center; gap: .5em;
   background: var(--marinho); color: var(--branco);
-  border-radius: var(--raio-pill); padding: 8px 14px;
+  border-radius: var(--raio-pill); padding: 7px 13px;
   font-size: var(--t-micro); font-weight: 800;
   text-transform: uppercase; letter-spacing: .08em;
-  box-shadow: var(--sombra-2);
+  white-space: nowrap; flex: none;
 }
 .palco__selo-ponto {
   width: 7px; height: 7px; border-radius: 50%; background: var(--amarelo);
@@ -116,29 +163,31 @@
 }
 @keyframes pulsar { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.65); } }
 
+/* a etiqueta de marca e preço: continua com cara de card, mas em fluxo —
+   assim ela NUNCA fica embaixo da imagem, em nenhuma largura */
 .palco__etiqueta {
-  position: absolute; left: -1%; bottom: 4%;
   display: flex; align-items: center; gap: 11px;
-  background: var(--branco); border-radius: var(--raio);
-  box-shadow: var(--sombra-2); padding: 11px 16px 11px 11px;
-  animation: flutuar 5.6s ease-in-out infinite;
+  min-width: 0; flex: 1;
+  border-radius: var(--raio); padding: 4px 6px;
+  transition: background-color var(--transicao-rapida);
 }
+.palco__etiqueta:hover { background: var(--fundo-2); }
 .palco__etiqueta-simbolo {
   width: 36px; height: 36px; border-radius: 10px; flex: none;
   background: var(--marinho); color: var(--amarelo);
   display: grid; place-items: center;
 }
 .palco__etiqueta-simbolo svg { width: 19px; height: 19px; }
-.palco__etiqueta-texto { display: flex; flex-direction: column; line-height: 1.25; }
+.palco__etiqueta-texto { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
 .palco__etiqueta-rotulo {
   font-size: var(--t-micro); text-transform: uppercase;
   letter-spacing: .09em; color: var(--texto-3); font-weight: 700;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .palco__etiqueta-valor { font-weight: 800; font-size: 1.04rem; color: var(--marinho); }
 
 .palco__pontos {
-  position: absolute; right: -1%; bottom: 30%;
-  display: flex; flex-direction: column; gap: 8px;
+  display: flex; flex-direction: row; gap: 7px; flex: none;
 }
 .palco__ponto {
   width: 9px; height: 9px; border-radius: 50%;
@@ -153,6 +202,12 @@
   background: var(--branco); border: 1px solid var(--borda);
   border-radius: var(--raio); padding: var(--e6);
   display: flex; flex-direction: column; gap: var(--e4);
+  transition: border-color var(--transicao-media), transform var(--transicao-media),
+              box-shadow var(--transicao-media);
+}
+.avaliacao:hover {
+  border-color: var(--borda-forte); transform: translateY(-5px);
+  box-shadow: 0 20px 44px rgba(12,20,37,.11);
 }
 .avaliacao__topo { display: flex; align-items: center; gap: var(--e3); }
 .avaliacao__avatar {
@@ -185,17 +240,86 @@
 .faq__resposta { padding: 0 var(--e6) var(--e5); color: var(--texto-2); font-size: var(--t-pequeno); }
 
 /* ---- contato ---- */
-.contato-grade { display: grid; grid-template-columns: 1fr 1fr; gap: var(--e7); align-items: start; }
+.contato-grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e7); align-items: start; }
 .contato-card {
+  min-width: 0; overflow-wrap: anywhere;
   background: var(--branco); border: 1px solid var(--borda);
   border-radius: var(--raio-g); padding: clamp(22px, 2.6vw, 36px);
+  transition: border-color var(--transicao-media), transform var(--transicao-media),
+              box-shadow var(--transicao-media);
+}
+.contato-card:hover {
+  border-color: var(--borda-forte); transform: translateY(-5px);
+  box-shadow: 0 20px 44px rgba(12,20,37,.11);
 }
 .contato-card__lista { display: flex; flex-direction: column; gap: var(--e5); margin-top: var(--e5); }
 .contato-card__item { display: flex; gap: var(--e4); align-items: flex-start; }
 .contato-card__item svg { width: 21px; height: 21px; color: var(--marinho); flex: none; margin-top: 3px; }
 .contato-card__item strong { display: block; font-weight: 700; }
 .contato-card__item span { color: var(--texto-2); font-size: var(--t-pequeno); }
-.mapa-falso { border-radius: var(--raio); overflow: hidden; border: 1px solid var(--borda); aspect-ratio: 16/10; background: var(--fundo-2); }
+/* ---- mapa real (Leaflet / OpenStreetMap) ---- */
+/* O card mantém o formato aprovado: mesmo raio, mesma borda, mesma proporção.
+   Só trocou o desenho por um mapa de verdade. */
+.mapa {
+  border-radius: var(--raio); overflow: hidden;
+  border: 1px solid var(--borda); background: var(--fundo-2);
+}
+.mapa__tela {
+  aspect-ratio: 16/10;
+  width: 100%;
+  background: var(--fundo-3);
+  /* o Leaflet escreve os controles com z-index alto; o card isola para não
+     subir por cima do cabeçalho fixo */
+  position: relative; z-index: 0;
+}
+.mapa__tela .leaflet-container { font-family: var(--fonte); }
+.mapa__tela .leaflet-control-attribution { font-size: 10px; }
+.mapa__tela .leaflet-popup-content { font-size: var(--t-micro); line-height: 1.5; }
+
+/* mapa que não pôde ser carregado: continua sendo um card útil */
+.mapa__sem {
+  height: 100%; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: var(--e2);
+  text-align: center; padding: var(--e5); color: var(--texto-2);
+}
+.mapa__sem-icone {
+  width: 54px; height: 54px; display: grid; place-items: center;
+  border-radius: 50%; background: var(--amarelo-suave); color: var(--marinho);
+  margin-bottom: var(--e1);
+}
+.mapa__sem strong { color: var(--marinho); font-size: var(--t-pequeno); }
+.mapa__sem span { font-size: var(--t-micro); max-width: 34ch; }
+.mapa__sem-end {
+  color: var(--marinho) !important; font-weight: 600;
+  background: var(--branco); border: 1px solid var(--borda);
+  border-radius: var(--raio-p); padding: .5em .8em; margin-top: var(--e2);
+}
+
+.mapa__aviso {
+  display: flex; gap: .5em; align-items: flex-start;
+  font-size: var(--t-micro); line-height: 1.5; padding: var(--e3) var(--e4);
+  border-top: 1px solid var(--borda);
+}
+.mapa__aviso svg { width: 15px; height: 15px; flex: none; margin-top: 2px; }
+.mapa__aviso--ok      { background: var(--ok-fundo); color: var(--ok); }
+.mapa__aviso--alerta  { background: var(--alerta-fundo); color: var(--alerta); }
+.mapa__aviso--erro    { background: var(--erro-fundo); color: var(--erro); }
+
+.mapa__acoes {
+  display: flex; gap: var(--e2); flex-wrap: wrap;
+  padding: var(--e4); border-top: 1px solid var(--borda);
+  background: var(--branco);
+}
+.mapa__acoes .btn { flex: 1 1 auto; justify-content: center; }
+.mapa__nota {
+  font-size: var(--t-micro); color: var(--texto-3);
+  padding: 0 var(--e4) var(--e4); margin: 0; background: var(--branco);
+}
+
+@media (max-width: 620px) {
+  .mapa__tela { aspect-ratio: 4/3; }
+  .mapa__acoes .btn { flex: 1 1 100%; }
+}
 
 /* ---- banda escura (equipamento) ---- */
 .banda-moto {
@@ -238,9 +362,15 @@
   display: flex; gap: var(--e4); align-items: flex-start;
   padding: var(--e5); border-radius: var(--raio);
   background: var(--branco); border: 1px solid var(--borda);
-  transition: border-color var(--transicao-media), transform var(--transicao-media);
+  transition: border-color var(--transicao-media), transform var(--transicao-media),
+              box-shadow var(--transicao-media);
 }
-.beneficio:hover { border-color: var(--borda-forte); transform: translateY(-3px); }
+.beneficio:hover {
+  border-color: var(--borda-forte); transform: translateY(-5px);
+  box-shadow: 0 20px 44px rgba(12,20,37,.11);
+}
+.beneficio__icone { transition: background-color var(--transicao-media), transform var(--transicao-media); }
+.beneficio:hover .beneficio__icone { background: var(--amarelo); transform: scale(1.06); }
 .beneficio__icone {
   width: 46px; height: 46px; border-radius: 13px; flex: none;
   background: var(--amarelo-suave); color: var(--marinho); display: grid; place-items: center;
@@ -249,21 +379,46 @@
 .beneficio h3 { font-size: 1.02rem; margin-bottom: .2em; }
 .beneficio p { font-size: var(--t-pequeno); color: var(--texto-2); }
 
-/* ---- sem movimento ---- */
+/* ---- sem movimento: nada desliza, nada varre ---- */
 @media (prefers-reduced-motion: reduce) {
+  .beneficio:hover, .contato-card:hover, .avaliacao:hover { transform: none; }
+  .beneficio:hover .beneficio__icone { transform: none; }
+  .brilho, *:hover > .brilho, *:hover > * > .brilho { transform: translateX(-110%); }
   .palco__area-amarela, .palco__brilho, .palco__item--ativo,
   .palco__etiqueta, .palco__selo-ponto { animation: none !important; }
   .palco__item { transition: none !important; }
 }
 
 /* ---- responsivo do palco ---- */
+@media (max-width: 860px) {
+  .contato-grade, .banda-moto, .faixa-promo { grid-template-columns: minmax(0, 1fr); }
+  .faixa-promo .btn { white-space: normal; }
+}
 @media (max-width: 1024px) {
-  .palco--hero { max-height: 400px; }
+  .palco { --palco-max: 400px; }
 }
 @media (max-width: 620px) {
-  .palco--hero { max-height: 320px; }
-  .palco__selo { padding: 7px 12px; }
-  .palco__etiqueta { padding: 9px 13px 9px 9px; }
-  .palco__etiqueta-simbolo { width: 32px; height: 32px; }
+  .palco { --palco-max: min(90%, 340px); }
+  .palco__palco { --palco-folga: clamp(8px, 3%, 14px); }
+  .palco__info { padding: 9px 10px; gap: var(--e2); }
+  .palco__selo { padding: 6px 10px; font-size: .6rem; }
+  .palco__etiqueta { gap: 8px; }
+  .palco__etiqueta-simbolo { width: 30px; height: 30px; }
+  .palco__etiqueta-valor { font-size: .94rem; }
+  .palco__pontos { gap: 6px; }
+  .palco__pontos { flex-basis: 100%; justify-content: center; }
+  .palco__ponto { width: 8px; height: 8px; }
   .banda-moto__arte { order: -1; }
+}
+@media (max-width: 420px) {
+  .palco { --palco-max: min(88%, 300px); }
+  .palco__etiqueta-rotulo { font-size: .62rem; }
+  .palco__etiqueta-valor { font-size: .88rem; }
+}
+/* Com movimento reduzido a moldura para de respirar — mas continua no lugar. */
+@media (prefers-reduced-motion: reduce) {
+  .palco__area-amarela { animation: none; }
+  .palco__brilho { animation: none; opacity: .55; }
+  .palco__item--ativo { animation: none; }
+  .palco__etiqueta { animation: none; }
 }

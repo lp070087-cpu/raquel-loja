@@ -36,7 +36,7 @@
       <div class="filtros-ativos" id="filtros-ativos"></div>
 
       <button class="btn btn--contorno btn--bloco mb-3 filtros__toggle" type="button" data-abrir-filtros
-              aria-expanded="false" aria-controls="painel-filtros">
+              aria-expanded="false" aria-controls="painel-filtros" disabled aria-busy="true">
         <span id="icone-filtros"></span> Filtros e ordenação
       </button>
 
@@ -100,8 +100,12 @@
 <script type="module">
   import { montarShell } from './assets/js/shell.js';
   import { montarCatalogo } from './assets/js/pagina-catalogo.js';
+  import { carregarCatalogo } from './assets/js/catalogo-api.js';
+  import { inicializarComercio } from './assets/js/carrinho.js';
 
-  montarShell({ pagina: 'pecas', raiz: '.' });
+  await montarShell({ pagina: 'pecas', raiz: '.' });
+  await carregarCatalogo();
+  await inicializarComercio().catch(() => false);
   montarCatalogo();
 </script>
 

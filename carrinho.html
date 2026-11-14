@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="assets/css/tokens.css">
 <link rel="stylesheet" href="assets/css/app.css">
 <link rel="stylesheet" href="assets/css/art.css">
+<link rel="stylesheet" href="assets/css/comercio.css">
 </head>
 <body data-pagina="carrinho" data-raiz=".">
 
@@ -37,8 +38,12 @@
 <script type="module">
   import { montarShell } from './assets/js/shell.js';
   import { montarCarrinho } from './assets/js/pagina-carrinho.js';
+  import { carregarCatalogo } from './assets/js/catalogo-api.js';
+  import { inicializarComercio } from './assets/js/carrinho.js';
 
-  montarShell({ pagina: 'carrinho', raiz: '.' });
+  await montarShell({ pagina: 'carrinho', raiz: '.' });
+  await carregarCatalogo();
+  await inicializarComercio().catch(() => false);
   montarCarrinho();
 </script>
 

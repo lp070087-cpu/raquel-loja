@@ -3,12 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
 <title>Minha conta — Moto Peças</title>
 <meta name="description" content="Seus pedidos e suas peças favoritas.">
 <meta name="theme-color" content="#FFD200">
 <link rel="stylesheet" href="assets/css/tokens.css">
 <link rel="stylesheet" href="assets/css/app.css">
 <link rel="stylesheet" href="assets/css/art.css">
+<link rel="stylesheet" href="assets/css/conta.css">
 </head>
 <body data-pagina="conta" data-raiz=".">
 
@@ -21,7 +23,7 @@
         <a href="index.html">Início</a> <span aria-hidden="true">/</span> <span>Minha conta</span>
       </nav>
       <h1>Minha conta</h1>
-      <p class="texto-2 mb-0">Acompanhe os pedidos feitos nesta demonstração.</p>
+      <p class="texto-2 mb-0">Suas motos, seus favoritos e seus pedidos em um só lugar.</p>
     </div>
   </section>
 
@@ -38,7 +40,7 @@
   import { montarShell } from './assets/js/shell.js';
   import { montarConta } from './assets/js/pagina-conta.js';
 
-  montarShell({ pagina: 'conta', raiz: '.' });
+  await montarShell({ pagina: 'conta', raiz: '.' });
   montarConta();
 </script>
 

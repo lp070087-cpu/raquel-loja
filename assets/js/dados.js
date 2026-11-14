@@ -64,6 +64,18 @@ export const LOJA = {
   demonstrativo: true,
 };
 
+/* ------------------------------------------------------------- CUPONS ----
+   DESCONTO DEMONSTRATIVO. Nada é validado em servidor: a regra está aqui e o
+   desconto é aplicado no navegador, só para a apresentação.
+   Na versão final o cupom vive no banco, com data de validade, limite de uso,
+   restrição por produto/categoria e uma validação que o cliente não pode
+   contornar pelo console. Ver assets/js/cupom.js. */
+export const CUPONS = [
+  { codigo: 'MOTO10',  tipo: 'percentual', valor: 0.10, minimo: 100, rotulo: '10% de desconto' },
+  { codigo: 'FRETE20', tipo: 'fixo',       valor: 20,   minimo: 150, rotulo: 'R$ 20 de desconto' },
+  { codigo: 'PRIMEIRA',tipo: 'percentual', valor: 0.05, minimo: 0,   rotulo: '5% na primeira compra' },
+];
+
 /* Endereço completo numa linha — usado nos links de mapa e "como chegar".
    Fica aqui para não haver duas versões do mesmo endereço pelo site. */
 export function enderecoEmLinha(l) {

@@ -216,6 +216,18 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 }
 
 /* -------------------------------------------------------------- 7. mídia */
+/* ---- brilho que varre o card no hover ----------------------------------
+   Uma classe só, reaproveitada por todos os cards que têm imagem. Antes o
+   efeito existia apenas no card de produto, e por isso os outros cards
+   pareciam de outro site. Precisa de um pai com `overflow: hidden`. */
+.brilho {
+  position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  background: linear-gradient(135deg, transparent 42%, rgba(255,212,0,.18) 50%, transparent 58%);
+  transform: translateX(-110%);
+  transition: transform 800ms ease;
+}
+*:hover > .brilho, *:hover > * > .brilho { transform: translateX(110%); }
+
 /* Caixa clara onde a peça se apoia — o branco da foto some no branco do card. */
 .caixa-foto { position: relative; background: var(--branco); overflow: hidden; }
 .caixa-foto::after {
@@ -323,6 +335,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 }
 .icone-btn__contador[hidden] { display: none; }
 .header .btn--header { flex: none; }
+.header .acoes-topo:has(.moto-header) .btn--header { display: none; }
 .hamburguer { display: none; }
 
 /* --- moto ativa no header --- */
@@ -445,13 +458,16 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .hero__badge svg { width: 14px; height: 14px; }
 
 .hero__titulo {
-  font-size: var(--t-display);
-  line-height: 1.06; letter-spacing: -.035em;
+  font-size: clamp(2.1rem, 4.4vw, 3.8rem);
+  line-height: 1.08; letter-spacing: -.035em; color: var(--marinho);
+  text-wrap: balance;
   margin: var(--e5) 0 var(--e4);
 }
-.hero__titulo .destaque { position: relative; display: inline-block; z-index: 0; padding: 0 .05em; }
+.hero__titulo .destaque {
+  display: inline; color: inherit; background: none; padding: 0;
+}
 .hero__titulo .destaque::before {
-  content: ""; position: absolute; z-index: -1;
+  content: none; position: absolute; z-index: -1;
   left: -.05em; right: -.05em; bottom: .07em; top: .18em;
   background: var(--amarelo); border-radius: 7px; transform: rotate(-.6deg);
 }
@@ -594,25 +610,44 @@ textarea.entrada { min-height: 110px; resize: vertical; }
 .moto-ativa__acoes { margin-left: auto; display: flex; gap: var(--e2); flex-wrap: wrap; }
 
 /* ------------------------------------------------------- 13. categorias */
+#grade-categorias { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(12px, 2vw, 24px); }
 .categoria-card {
-  position: relative; display: block;
+  position: relative; display: grid; grid-template-rows: auto 1fr; min-width: 0;
   border: 1px solid var(--borda); border-radius: var(--raio-g);
   overflow: hidden; background: var(--branco);
   transition: border-color var(--transicao-media), transform var(--transicao-media),
               box-shadow var(--transicao-media);
 }
 .categoria-card:hover {
-  border-color: var(--borda-forte); transform: translateY(-4px); box-shadow: var(--sombra-2);
+  border-color: var(--borda-forte); transform: translateY(-3px);
+  box-shadow: 0 20px 44px rgba(12,20,37,.11);
 }
-.categoria-card__midia { aspect-ratio: 4 / 3; overflow: hidden; background: var(--fundo-2); }
+.categoria-card:focus-visible {
+  outline: none; border-color: var(--amarelo);
+  box-shadow: 0 0 0 3px rgba(255,212,0,.3), 0 20px 44px rgba(12,20,37,.11);
+}
+.categoria-card__midia {
+  position: relative; display: grid; place-items: center; width: 100%;
+  height: clamp(132px, 12vw, 160px); padding: 16px;
+  overflow: hidden; background: var(--branco);
+}
 .categoria-card__midia img { transition: transform var(--transicao-lenta); }
-.categoria-card:hover .categoria-card__midia img { transform: scale(1.06); }
+.categoria-card__midia .foto-produto { width: 100%; height: 100%; min-height: 0; object-fit: contain; object-position: center; transform: none; }
+.categoria-card:hover .categoria-card__midia img { transform: scale(1.03); }
 .categoria-card__corpo {
-  padding: var(--e4) var(--e5) var(--e5);
+  padding: 12px 16px 16px;
   display: flex; align-items: center; justify-content: space-between; gap: var(--e3);
 }
-.categoria-card__nome { font-weight: 700; font-size: 1.04rem; margin: 0; }
-.categoria-card__qtd { font-size: var(--t-micro); color: var(--texto-3); }
+.categoria-card__corpo > span:first-child { min-width: 0; }
+.categoria-card__nome { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; min-height: 2.6em; line-height: 1.3; font-weight: 700; font-size: .95rem; margin: 0; }
+.categoria-card__qtd { display: block; font-size: var(--t-micro); color: var(--texto-3); }
+@media (max-width: 900px) { #grade-categorias { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 620px) {
+  .categoria-card__midia { height: 116px; padding: 12px; }
+  .categoria-card__corpo { padding: 10px 12px 12px; gap: 6px; }
+  .categoria-card__nome { font-size: .85rem; }
+  .categoria-card__corpo .categoria-card__seta { width: 24px; height: 24px; }
+}
 .categoria-card__seta {
   width: 32px; height: 32px; border-radius: 50%; flex: none;
   background: var(--fundo-2); color: var(--marinho);
@@ -643,7 +678,7 @@ textarea.entrada { min-height: 110px; resize: vertical; }
   padding: var(--e5);
   display: grid; place-items: center;
 }
-.produto-card__midia a { display: block; width: 100%; height: 100%; }
+.produto-card__midia a { display: block; position: relative; z-index: 2; width: 100%; height: 100%; min-height: 0; }
 .produto-card:hover .produto-card__midia .foto-produto { transform: scale(calc(var(--foto-zoom, 1) * 1.07)); }
 .produto-card__brilho {
   position: absolute; inset: 0; pointer-events: none;
@@ -696,7 +731,45 @@ textarea.entrada { min-height: 110px; resize: vertical; }
   letter-spacing: -.03em; line-height: 1.1;
 }
 .produto-card__pix { display: block; font-size: var(--t-micro); color: var(--ok); font-weight: 600; margin-top: 2px; }
-.produto-card__rodape { margin-top: var(--e4); }
+.produto-card__rodape {
+  margin-top: var(--e4);
+  display: flex; flex-direction: column; gap: var(--e2);
+}
+
+/* ---- card inteiro clicável -------------------------------------------- */
+/* A imagem e o nome já são links. Isto estende a ÁREA do nome para cobrir o
+   card todo, para clicar em qualquer ponto abrir o produto — menos nos
+   controles (favorito e botões), que continuam com o clique próprio. */
+.produto-card { position: relative; }
+.produto-card__nome a::after {
+  content: ''; position: absolute; inset: 0; z-index: 1;
+}
+.produto-card__favorito,
+.produto-card__selos { position: absolute; z-index: 3; }
+.produto-card__selos { pointer-events: none; }
+.produto-card__rodape { position: relative; z-index: 2; }
+.produto-card__rodape a,
+.produto-card__rodape button { position: relative; z-index: 2; }
+
+/* foco visível no card inteiro quando se navega pelo teclado */
+.produto-card__nome a:focus-visible { outline: none; }
+.produto-card:focus-within {
+  border-color: var(--amarelo);
+  box-shadow: 0 0 0 3px rgba(255,212,0,.3), 0 20px 44px rgba(12,20,37,.11);
+}
+
+/* confirmação do botão de adicionar (o cabeçalho do carrinho muda junto) */
+.btn--adicionado {
+  --btn-fundo: var(--ok); --btn-texto: var(--branco);
+  border-color: var(--ok);
+}
+
+/* ---- quem não se move: entra com fade em vez de deslizar ---------------- */
+@media (prefers-reduced-motion: reduce) {
+  .produto-card:hover { transform: none; }
+  .produto-card:hover .produto-card__midia .foto-produto { transform: scale(var(--foto-zoom, 1)); }
+  .produto-card:hover .produto-card__brilho { transform: translateX(-110%); }
+}
 
 .produto-card--esgotado .produto-card__midia { opacity: .5; }
 
@@ -922,7 +995,23 @@ textarea.entrada { min-height: 110px; resize: vertical; }
   font-weight: 800; font-size: 1.3rem;
 }
 .resumo__linha--total span:last-child { font-size: 1.42rem; }
+.resumo__linha--desconto { color: var(--ok); font-weight: 600; }
+.resumo__linha--desconto .link-simples {
+  font-size: var(--t-micro); font-weight: 500; color: var(--texto-3);
+  text-transform: lowercase; margin-left: .4em;
+}
 .resumo__rodape { margin-top: var(--e5); display: flex; flex-direction: column; gap: var(--e3); }
+
+/* ---- cupom de desconto ---- */
+.cupom { margin-top: var(--e5); padding-top: var(--e5); border-top: 1px solid var(--borda); }
+.cupom__linha { display: flex; gap: var(--e2); }
+.cupom__linha .entrada {
+  flex: 1; min-width: 0; padding: .62em .9em; font-size: var(--t-pequeno);
+  text-transform: uppercase; letter-spacing: .06em; font-weight: 600;
+}
+.cupom__linha .btn { flex: none; }
+.cupom .micro { display: block; margin-top: var(--e2); }
+.cupom .micro strong { color: var(--marinho); }
 .resumo__nota { font-size: var(--t-micro); color: var(--texto-3); text-align: center; }
 
 .estado-vazio {
@@ -1118,15 +1207,58 @@ textarea.entrada { min-height: 110px; resize: vertical; }
 .link-simples:hover { color: var(--marinho); text-decoration: underline; }
 
 /* faixa de marcas */
-.marquee { overflow: hidden; border-block: 1px solid var(--borda); background: var(--branco); }
-.marquee__trilha { display: flex; gap: 64px; width: max-content; padding: var(--e5) var(--e6); animation: deslizar 38s linear infinite; }
-.marquee:hover .marquee__trilha { animation-play-state: paused; }
+/* ---- letreiro de marcas: laço infinito, deslocamento medido ---- */
+/* O deslocamento NÃO é porcentagem: é `--marquee-ciclo`, a largura real de um
+   ciclo medida em JS (ver ligarMarquee em componentes.js). Porcentagem erraria
+   em tela larga, porque uma lista de 7 marcas é mais estreita que a tela e
+   sobraria vão no fim. A duração também vem do JS, para a velocidade ser
+   constante em qualquer largura. */
+.marquee {
+  overflow: hidden;
+  border-block: 1px solid var(--borda);
+  background: var(--branco);
+  --marquee-vao: clamp(34px, 4.4vw, 64px);
+  --marquee-ciclo: 50%;          /* valor inicial, trocado pelo medido */
+  /* esmaece as pontas: a entrada e a saída não têm corte seco */
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+}
+.marquee__trilha {
+  display: flex;
+  width: max-content;
+  animation: deslizar 26s linear infinite;
+  will-change: transform;
+}
+.marquee__ciclo {
+  display: flex; align-items: center;
+  gap: var(--marquee-vao);
+  /* o respiro final do ciclo é do MESMO tamanho do vão: assim um ciclo tem
+     largura uniforme e os itens ficam igualmente espaçados na emenda */
+  padding: 0 var(--marquee-vao) 0 0;
+  margin: 0;
+  list-style: none;
+  flex: none;
+}
 .marquee__item {
   font-weight: 800; font-size: 1.22rem; color: var(--texto-3);
   letter-spacing: .02em; white-space: nowrap; text-transform: uppercase;
+  flex: none;
 }
-@keyframes deslizar { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-@media (prefers-reduced-motion: reduce) { .marquee__trilha { animation: none; } }
+/* anda EXATAMENTE a largura de um ciclo: o quadro final coincide com o
+   inicial e o olho não percebe o recomeço */
+@keyframes deslizar {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(calc(-1 * var(--marquee-ciclo)), 0, 0); }
+}
+.marquee:hover .marquee__trilha { animation-play-state: paused; }
+
+@media (max-width: 860px) {
+  .marquee__item { font-size: 1rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee__trilha { animation: none; }
+  .marquee { -webkit-mask-image: none; mask-image: none; }
+}
 
 /* barra fixa do celular */
 .barra-mobile {
@@ -1145,7 +1277,7 @@ textarea.entrada { min-height: 110px; resize: vertical; }
 .barra-mobile svg { width: 20px; height: 20px; }
 
 /* ---------------------------------------------------------- 24. responsivo */
-@media (max-width: 1180px) {
+@media (max-width: 1400px) {
   .nav { display: none; }
   .hamburguer { display: grid; }
   .header .btn--header { display: none; }
@@ -1173,6 +1305,10 @@ textarea.entrada { min-height: 110px; resize: vertical; }
 
 @media (max-width: 860px) {
   .grade--4, .grade--3 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  /* tablet: hero em uma coluna, texto antes do palco */
+  .hero__grade { grid-template-columns: 1fr; gap: clamp(30px, 5vw, 44px); }
+  .hero__texto { order: 1; }
+  .palco--hero { order: 2; max-width: 460px; }
   .hero__beneficios { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .contato-grade { grid-template-columns: 1fr; }
   .banda-moto { grid-template-columns: 1fr; }
@@ -1184,6 +1320,35 @@ textarea.entrada { min-height: 110px; resize: vertical; }
 
 @media (max-width: 620px) {
   .grade--4, .grade--3, .grade--2 { grid-template-columns: 1fr; }
+
+  /* ---- HERO NO CELULAR: o MESMO design, reorganizado -------------------
+     Não é um banner diferente: continuam o título, o destaque amarelo, os
+     botões, a moldura amarela, o card flutuante e os decorativos. A ordem
+     só troca — o texto vem primeiro e o palco embaixo — porque em uma
+     coluna o produto no meio empurraria os botões para fora da dobra.
+     O `padding-inline` extra existe porque o selo e os pontos ficam nas
+     laterais do palco e, sem folga, sairiam da tela. */
+  .hero { padding-inline: 0; }
+  .hero__grade { gap: clamp(26px, 7vw, 40px); }
+  .hero__texto { order: 1; }
+  .palco--hero { order: 2; margin-block: 4px 12px; }
+
+  .hero__badge { font-size: .62rem; padding: .45em .9em; }
+  .hero__titulo { letter-spacing: -.02em; line-height: 1.1; margin: var(--e4) 0 var(--e3); }
+  .hero__sub { font-size: var(--t-pequeno); margin-bottom: var(--e5); max-width: none; }
+
+  /* botões um embaixo do outro, ocupando a largura: alvo de toque grande e
+     nada de texto apertado em duas colunas estreitas */
+  .hero__ctas { flex-direction: column; align-items: stretch; gap: var(--e2); }
+  .hero__ctas .btn { width: 100%; min-width: 0; justify-content: center; }
+
+  .hero__beneficios { grid-template-columns: repeat(2, minmax(0,1fr)); margin-top: var(--e5); padding-top: var(--e4); }
+  .hero__beneficios li { font-size: var(--t-micro); }
+
+  /* as formas decorativas encolhem mas NÃO somem: são a identidade do banner */
+  .hero__forma--grande { width: 92vw; height: 92vw; right: -34vw; top: -40vw; opacity: .38; }
+  .hero__forma--media { width: 46vw; height: 46vw; right: -6vw; bottom: -14vw; opacity: .24; }
+  .hero__forma--pequena { width: 28vw; height: 28vw; left: -10vw; bottom: 6vw; opacity: .3; }
   .localizador__campos { grid-template-columns: 1fr; }
   .marca__tag { display: none; }
   .moto-header__texto { display: none; }
@@ -1200,7 +1365,18 @@ textarea.entrada { min-height: 110px; resize: vertical; }
 }
 
 @media (max-width: 420px) {
-  .hero__titulo { font-size: 2.05rem; }
+  /* A moto continua no menu e no localizador; este atalho duplicado fazia
+     carrinho e botão de menu saírem da tela em 320px. */
+  .header .container { gap: 8px; }
+  .header .marca { gap: 6px; }
+  .header .marca__nome { font-size: 1rem; }
+  .header .marca__simbolo { width: 32px; height: 32px; }
+  .header .acoes-topo { gap: 2px; margin-left: auto; }
+  .header .acoes-topo > [data-moto-header] { display: none; }
+  .header .acoes-topo .icone-btn { width: 32px; min-width: 32px; height: 40px; padding: 4px; }
+  .hero__titulo { font-size: 1.92rem; }
+  .hero__beneficios { grid-template-columns: 1fr 1fr; gap: var(--e2) var(--e3); }
+  .hero__beneficios li { font-size: .68rem; }
   .btn { padding: .85em 1.2em; font-size: .9rem; }
   .quantidade button { width: 38px; }
   .hero__ctas .btn { flex: 1; min-width: 140px; }

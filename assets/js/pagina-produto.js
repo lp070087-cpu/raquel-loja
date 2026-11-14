@@ -12,14 +12,14 @@
    ============================================================================ */
 
 import {
-  LOJA, produtoPorId, precoPix, parcelaDe, produtoServeEm, ehUniversal,
+  LOJA, produtoPorId, produtoServeEm, ehUniversal,
   rotuloMoto, nomeCategoria, aplicacoesDoProduto, PRODUTOS,
 } from './dados.js';
 import {
   moeda, esc, icone, avisar, temDesconto, descontoPct, prepararRevelar, cascata, estrelas,
 } from './utils.js';
 import { midiaProduto, galeriaProduto } from './artes.js';
-import { carrinho, favoritos, moto as motoStore } from './carrinho.js';
+import { carrinho, favoritos, moto as motoStore, aguardarSincronizacao } from './carrinho.js';
 import {
   cardProduto, estadoVazio, linhaProduto, blocoCompatibilidade, drawerAplicacoes, tituloSecao,
 } from './componentes.js';
@@ -49,8 +49,6 @@ export function montarProduto() {
   const serve = moto && !universal ? produtoServeEm(produto, moto) : false;
   const esgotado = Number(produto.estoque) <= 0;
   const fav = favoritos.ehFavorito(produto.id);
-  const pix = precoPix(produto.preco);
-  const parcela = parcelaDe(produto.preco);
   const nota = produto.avaliacao || { nota: 5, total: 0 };
   const galeria = galeriaProduto(produto);
   const apps = aplicacoesDoProduto(produto);
@@ -100,8 +98,8 @@ export function montarProduto() {
     <div class="produto__bloco-preco">
       ${temDesconto(produto) ? `<span class="produto__de">${moeda(produto.precoDe)}</span>` : ''}
       <div class="produto__preco">${moeda(produto.preco)}</div>
-      <div class="produto__pix">${moeda(pix)} no Pix — ${Math.round(LOJA.pixDesconto * 100)}% de desconto</div>
-      <div class="produto__parcela">ou ${LOJA.parcelas}x de ${moeda(parcela)} sem juros</div>
+      <div class="produto__pix">Pagamento realizado na retirada, diretamente na loja.</div>
+      <div class="produto__parcela">Pix presencial, dinheiro ou cartão na maquininha. Nenhuma cobrança pelo site.</div>
     </div>
 
     <p class="estoque-linha ${esgotado ? 'estoque-linha--fora' : Number(produto.estoque) <= Number(produto.estoqueMinimo) ? 'estoque-linha--baixo' : ''}">
@@ -128,10 +126,13 @@ export function montarProduto() {
     <button class="btn btn--marinho btn--bloco btn--grande" type="button" id="btn-comprar" ${esgotado ? 'disabled aria-disabled="true"' : ''}>
       Comprar agora
     </button>
+    <button class="btn btn--contorno btn--bloco mt-2" type="button" data-favoritar="${esc(produto.id)}" data-nome="${esc(produto.nome)}" aria-label="${fav ? 'Remover' : 'Salvar'} ${esc(produto.nome)} ${fav ? 'dos' : 'nos'} favoritos" aria-pressed="${fav ? 'true' : 'false'}">
+      ${icone('coracao', 18)} <span data-rotulo-favorito>${fav ? 'Salvo' : 'Salvar'}</span>
+    </button>
 
     <div class="linha mt-4" style="gap:10px">
       <span class="selo selo--ok">${icone('check', 12)} Retirada na loja</span>
-      <span class="selo selo--neutro">${icone('caminhao', 12)} Envio para todo o Brasil</span>
+      <span class="selo selo--neutro">${icone('caminhao', 12)} Entrega ainda indisponível</span>
       <span class="selo selo--neutro">${icone('escudo', 12)} Garantia do fabricante</span>
     </div>
 
@@ -203,9 +204,9 @@ export function montarProduto() {
     </div>
     <div class="painel-dados">
       <h3>${icone('caminhao', 19)} Receber em casa</h3>
-      <p class="texto-2 pequeno">Enviamos para todo o Brasil. No checkout você informa o CEP e vê as transportadoras com prazo e valor antes de fechar.</p>
-      <div class="painel-dados__linha"><span class="rot">Frete grátis</span><span class="val">Acima de ${moeda(LOJA.freeShippingFrom)} no PAC</span></div>
-      <div class="painel-dados__linha"><span class="rot">Prazo</span><span class="val">2 a 8 dias úteis</span></div>
+      <p class="texto-2 pequeno">Entrega e cálculo de frete ainda não estão disponíveis. Escolha a retirada na loja para continuar o pedido.</p>
+      <div class="painel-dados__linha"><span class="rot">Frete</span><span class="val">Indisponível no momento</span></div>
+      <div class="painel-dados__linha"><span class="rot">Prazo</span><span class="val">Não disponível</span></div>
     </div>
   </div>
 </div>
@@ -244,18 +245,31 @@ export function montarProduto() {
 
   const btnAdd = document.getElementById('btn-adicionar');
   if (btnAdd) {
-    btnAdd.addEventListener('click', () => {
+    btnAdd.addEventListener('click', async () => {
+      if (btnAdd.disabled) return;
+      btnAdd.disabled = true;
+      btnAdd.setAttribute('aria-busy', 'true');
+      try {
       const r = carrinho.adicionar(produto.id, lerQtd());
-      if (r.ok) { avisar(r.mensagem); import('./shell.js').then((m) => m.atualizarContadorCarrinho()).catch(() => {}); }
+      if (r.ok) { await aguardarSincronizacao(); avisar(r.mensagem); import('./shell.js').then((m) => m.atualizarContadorCarrinho()).catch(() => {}); }
       else avisar(r.mensagem, 'erro');
+      } catch (error) { avisar(error.message, 'erro'); }
+      finally { btnAdd.disabled = false; btnAdd.removeAttribute('aria-busy'); }
     });
   }
 
   const btnComprar = document.getElementById('btn-comprar');
   if (btnComprar) {
-    btnComprar.addEventListener('click', () => {
-      carrinho.adicionar(produto.id, lerQtd());
-      window.location.href = 'checkout.html';
+    btnComprar.addEventListener('click', async () => {
+      if (btnComprar.disabled) return;
+      btnComprar.disabled = true;
+      try {
+        const resultado = carrinho.adicionar(produto.id, lerQtd());
+        if (!resultado.ok) { avisar(resultado.mensagem, 'erro'); return; }
+        await aguardarSincronizacao();
+        window.location.href = 'checkout.html';
+      } catch (error) { avisar(error.message, 'erro'); }
+      finally { btnComprar.disabled = false; }
     });
   }
 

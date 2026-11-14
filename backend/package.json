@@ -1,0 +1,52 @@
+{
+  "name": "raquel-api",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/src/server.js",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "db:generate": "prisma generate",
+    "db:migrate": "tsx scripts/neon-migrate.ts --apply",
+    "db:status": "tsx scripts/neon-migrate.ts",
+    "db:preflight": "tsx scripts/neon-preflight.ts",
+    "db:targets": "tsx scripts/verify-neon-targets.ts",
+    "db:testing:seed": "tsx scripts/testing-runtime.ts --seed",
+    "dev:testing": "tsx scripts/testing-runtime.ts",
+    "test:development": "tsx scripts/development-account-smoke.ts",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:check": "tsx src/db-check.ts",
+    "test:integration": "tsx scripts/test-integration.ts"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/cors": "^11.1.0",
+    "@fastify/rate-limit": "^10.3.0",
+    "@prisma/client": "6.19.0",
+    "argon2": "^0.44.0",
+    "dotenv": "^17.2.3",
+    "fastify": "^5.6.0",
+    "nodemailer": "^10.2.1",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^24.10.0",
+    "@types/nodemailer": "^7.0.3",
+    "prisma": "6.19.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  },
+  "overrides": {
+    "@prisma/config": {
+      "effect": "^3.20.0",
+      "deepmerge-ts": "^8.0.0"
+    }
+  }
+}

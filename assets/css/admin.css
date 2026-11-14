@@ -338,6 +338,10 @@
   .tabela th, .tabela td { padding: var(--e3) var(--e4); }
 }
 
+.atendimento-real { min-width: 0; overflow-wrap: anywhere; }
+.atendimento-real .entrada { min-width: 0; max-width: 100%; }
+.atendimento-real .btn { max-width: 100%; white-space: normal; margin-block: .35rem; }
+
 /* impressão: some tudo que é acessório */
 @media print {
   .admin__lateral, .faixa-demo, .barra-mobile, .admin__usuario { display: none !important; }
@@ -347,3 +351,49 @@
   .validador { background: none; color: #000; border: 1px solid #ccc; }
   .validador h3, .validador p { color: #000; }
 }
+.admin__lateral{overflow-y:auto}
+.admin__principal,.admin__menu,.admin__menu-item{min-width:0}
+.admin__usuario .forte,.admin__usuario .micro{display:block}
+.admin-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:16px 0}
+.admin-actions .btn{white-space:normal;max-width:100%;text-align:center}
+.admin-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-bottom:28px}
+.admin-editor{margin:20px 0}
+.admin-field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.admin-field-grid>label,.admin-compat-row>label{display:grid;gap:6px;font-size:.875rem;min-width:0}
+.admin-field-grid .entrada,.admin-password .entrada{width:100%;min-width:0;max-width:100%}
+.admin-field-grid textarea{resize:vertical;font:inherit}
+.admin-field-grid .admin-span,.admin-compat{grid-column:1/-1}
+.admin-field-grid .admin-check,.admin-check{display:flex;gap:8px;align-items:center}
+.admin-check input{width:auto}
+.admin-compat{min-width:0;border:1px solid var(--borda);border-radius:12px;padding:16px}
+.admin-compat-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;padding-block:14px;border-bottom:1px solid var(--borda)}
+.admin-compat-row>[data-remove-compat]{grid-column:1/-1;justify-self:start}
+.admin-search{display:grid;gap:6px;max-width:480px;margin-bottom:18px;font-size:.875rem}
+.admin-password{display:flex;gap:8px;align-items:center}
+.admin-password .entrada{flex:1;width:0}
+.admin-password .btn{flex:none}
+.login-caixa h1{font-size:1.5rem;margin-bottom:.3em}
+.login-caixa>.marca{margin-bottom:24px}
+.admin-editor-form [data-form-error]{overflow-wrap:anywhere}
+@media(max-width:1024px){
+  .admin__lateral{display:block;overflow:visible}
+  .admin__marca{margin-bottom:16px}
+  .admin__marca .marca__texto{display:flex;flex-direction:column}
+  .admin__menu{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;gap:6px}
+  .admin__menu-rotulo{display:block;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
+  .admin__menu-item{white-space:normal;min-height:44px;padding:10px 8px;font-size:.8rem}
+  .admin-compat-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .admin-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:620px){
+  .admin__menu{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .admin-field-grid,.admin-compat-row,.admin-metrics{grid-template-columns:minmax(0,1fr)}
+  .admin__usuario{flex-wrap:wrap}
+  .admin__principal{overflow-wrap:anywhere}
+  .admin-editor .painel__corpo{padding:16px}
+}
+.admin-list-controls{margin:16px 0}
+.admin-list-search{display:flex;align-items:flex-end;flex-wrap:wrap;gap:12px}
+.admin-list-search>label{display:grid;gap:6px;min-width:0;font-size:.875rem;flex:1;min-width:150px}
+.admin-list-search .entrada{min-width:0;width:100%}
+@media(max-width:620px){.admin-list-search{display:grid;grid-template-columns:minmax(0,1fr)}.admin-list-search>label{min-width:0}}

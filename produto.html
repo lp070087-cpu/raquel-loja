@@ -27,8 +27,12 @@
 <script type="module">
   import { montarShell } from './assets/js/shell.js';
   import { montarProduto } from './assets/js/pagina-produto.js';
+  import { carregarCatalogo } from './assets/js/catalogo-api.js';
+  import { inicializarComercio } from './assets/js/carrinho.js';
 
-  montarShell({ pagina: 'pecas', raiz: '.' });
+  await montarShell({ pagina: 'pecas', raiz: '.' });
+  await carregarCatalogo();
+  await inicializarComercio().catch(() => false);
   montarProduto();
 </script>
 
