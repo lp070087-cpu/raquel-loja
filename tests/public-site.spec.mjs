@@ -43,8 +43,9 @@ test('banner e categorias nas sete larguras',async({page})=>{
    expect(geometry.overflow).toBe(false);
    expect(geometry.cards.every(c=>c.placeholder||(c.loaded&&c.fit==='contain'))).toBe(true);
    expect(Math.max(...geometry.cards.map(c=>c.height))-Math.min(...geometry.cards.map(c=>c.height))).toBeLessThan(2);
-   expect(geometry.cards.every(c=>c.height<280&&c.mediaHeight>70)).toBe(true);
-   expect(geometry.cards.filter(c=>Math.abs(c.top-geometry.cards[0].top)<2).length).toBe(width>=1024?4:2);
+   expect(geometry.cards.every(c=>c.height<=76&&c.mediaHeight>=64)).toBe(true);
+   expect(geometry.cards).toHaveLength(3);
+   expect(geometry.cards.filter(c=>Math.abs(c.top-geometry.cards[0].top)<2).length).toBe(width>620?3:1);
   }
  }
  await writeFile(`${folder}/layout.json`,JSON.stringify({stage,measurements,scriptErrors:errors},null,2));
@@ -73,8 +74,7 @@ test('navegação pública até pedido real e conta do cliente',async({page,requ
  page.on('response',r=>{const u=new URL(r.url());if(['127.0.0.1','localhost'].includes(u.hostname)&&r.status()>=400&&!(r.status()===401&&u.pathname==='/api/auth/me'))badResponses.push({path:u.pathname,status:r.status()});});
  await page.setViewportSize({width:1440,height:950});
  await page.goto('/index.html',{waitUntil:'commit'});
- const expectedCategories=(await(await request.get('http://127.0.0.1:3001/api/categories')).json()).categories.length;
- await expect(page.locator('.categoria-card')).toHaveCount(expectedCategories);
+ await expect(page.locator('.categoria-card')).toHaveCount(3);
  const links=await page.locator('header a[href],footer a[href],.categoria-card').evaluateAll(els=>[...new Set(els.map(el=>el.href).filter(url=>url.startsWith(location.origin)))]);
  for(const link of links)expect((await request.get(link)).status(),new URL(link).pathname).toBe(200);
  await page.locator('.categoria-card[href="catalogo.html?categoria=oleos"]').click({noWaitAfter:true});

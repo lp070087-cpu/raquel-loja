@@ -55,7 +55,11 @@ export function montarHome() {
     acao: { href: 'catalogo.html', rotulo: 'Ver catálogo completo' },
   });
   const alvoCat = document.getElementById('grade-categorias');
-  alvoCat.innerHTML = CATEGORIAS.map((c) => {
+  // A home é uma seleção curta; todas as categorias continuam no catálogo.
+  const categoriasDestaque = ['oleos', 'freios', 'transmissao']
+    .map((slug) => CATEGORIAS.find((categoria) => categoria.slug === slug))
+    .filter(Boolean);
+  alvoCat.innerHTML = categoriasDestaque.map((c) => {
     const qtd = produtosDaCategoria(c.slug).length;
     return `
     <a class="categoria-card revelar" href="catalogo.html?categoria=${esc(c.slug)}">

@@ -197,6 +197,14 @@
 .palco__ponto:hover { background: rgba(12,20,37,.45); }
 .palco__ponto[aria-current="true"] { background: var(--marinho); transform: scale(1.4); }
 
+/* Moldura estável e superfície contínua; a troca usa apenas um fade discreto. */
+#palco-hero .palco__palco { --palco-folga: 8px; border-radius: 50%; overflow: hidden; isolation: isolate; }
+#palco-hero .palco__area-amarela { background: var(--amarelo); box-shadow: none; animation: none; }
+#palco-hero .palco__brilho { display: none; }
+#palco-hero .palco__card { box-shadow: none; }
+#palco-hero .palco__item { transform: none; animation: none; transition: opacity 450ms ease-in-out; will-change: opacity; }
+#palco-hero .palco__info { box-shadow: none; background: var(--branco); }
+
 /* ---- avaliações: estrelas e cartão (moram aqui porque usam as estrelas) --- */
 .avaliacao {
   background: var(--branco); border: 1px solid var(--borda);

@@ -1,5 +1,24 @@
 # Progresso Codex — Loja Raquel
 
+## Ajustes e publicação — 16–17/11/2026
+
+- Ler `VALIDACAO-LINK-PUBLICO.md`. Usuário pediu cards ainda menores, banner mais uniforme, teste do link público e depois autorizou commit/redeploy.
+- Categorias agora horizontais e compactas: cerca de 74 px desktop/66 px celular; três opções reais e catálogo completo preservado. Teste direcionado 1/1 aprovado em 53,1 s.
+- Banner com círculo estável e fade, sem flutuação/parallax dos produtos ou sombra forte; seleção editorial exclui fixtures testing. Reteste final APROVADO em 19,7 s (24 s total), incluindo todos os slides/links e sete larguras.
+- Simulação pública APROVADA: dois produtos, rejeição de três campos inválidos, reserva e código de sete caracteres, consulta na conta. É versão antiga sem login real, sem API e sem Neon. Todas as escritas de rede bloqueadas. Evidência `evidence/public-demo-2026-11-16/result.json`.
+- Parar antes do balcão para pedir ao usuário o código da captura `demo-pickup-code.png`, como solicitado. Pedido sintético recuperável em `demo-order.json`; sem credenciais. Não alegar pagamento ou compra real.
+- Vercel ainda retorna 403/forbidden com equipe configurada, inclusive no endpoint de usuário. Commit autorizado; redeploy bloqueado por autenticação e API de produção não hospedada. Não fazer push para disparar deploy incompleto. Sem migração ou escrita em production.
+- Servidores locais pausados somente durante o teste público por RAM baixa e depois religados em 8000 e 3001, API confirmada exclusivamente testing. Nenhum programa pessoal encerrado.
+
+## Ajuste pontual — 15/11/2026
+
+- Por solicitação do usuário, alterada somente a seção de categorias da home: Óleos, Freios e Transmissão; demais categorias não são renderizadas nessa seção e permanecem no catálogo. Nenhum dado excluído ou modificado no banco.
+- Cards menores: três colunas em desktop/tablet, três linhas compactas no celular, imagens inteiras. Restante da loja preservado.
+- Playwright direcionado APROVADO: 1/1, 23,7 s (28,8 s total), um worker, API testing existente confirmada. Sete larguras sem overflow, imagens carregadas/contain, três cards, acesso ao catálogo e lista completa de categorias preservada; sem pageerrors.
+- Capturas desktop e mobile inspecionadas: `evidence/home-categories-2026-11-15/categories-1440.png` e `categories-390.png`; resultado em `result.json` nessa pasta. Sintaxe e diff sem erros.
+- Arquivos de aplicação: `assets/js/pagina-home.js` e apenas regras de categorias em `assets/css/app.css`. Atualizados testes relacionados e adicionado `tests/home-categories.spec.mjs`. Sem commit/deploy nesta solicitação pontual.
+- Reteste: com frontend HTTP e API testing ativos, executar `node backend/node_modules/@playwright/test/cli.js test --config=playwright.routes.config.mjs home-categories.spec.mjs --workers=1`; `PLAYWRIGHT_EXECUTABLE_PATH` permite usar o navegador leve local.
+
 ## Execução atual — 14/11/2026
 
 ## Resultado final comprovado desta retomada

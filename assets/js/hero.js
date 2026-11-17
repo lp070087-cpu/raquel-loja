@@ -15,14 +15,16 @@
 
    Movimento (discreto, em camadas):
      • entrada escalonada do texto (5 degraus de 90 ms);
-     • produto entra de lado, troca a cada 4,2 s, flutua 8 px;
-     • brilho girando devagar atrás do produto (profundidade);
+     • produto troca a cada 4,2 s com fade, mantendo moldura e escala estáveis;
      • formas amarelas com parallax de mouse;
      • para sozinho depois de 40 s sem interação e quando a aba perde o foco.
    ============================================================================ */
 
 import { PRODUTOS, IMAGENS_BANNER } from './dados.js';
 import { icone, moeda, embaralhar, esc } from './utils.js';
+
+// O banner usa a seleção editorial original, mesmo com fixtures no catálogo testing.
+const produtosDoBanner = new Set(PRODUTOS.map((produto) => produto.id));
 
 export const INTERVALO_MS = 4200;
 const PAUSA_APOS_MS = 40000;
@@ -33,11 +35,11 @@ export function htmlHero() {
      produto se faltar, para o palco nunca ficar com 1 item — com 1 item não
      existe troca, e a troca é o ponto desta seção. */
   const porImagem = new Map();
-  PRODUTOS.forEach((p) => { if (IMAGENS_BANNER.indexOf(p.foto) !== -1) porImagem.set(p.foto, p); });
+  PRODUTOS.forEach((p) => { if (produtosDoBanner.has(p.id) && IMAGENS_BANNER.indexOf(p.foto) !== -1) porImagem.set(p.foto, p); });
 
   let escolhidos = IMAGENS_BANNER.map((f) => porImagem.get(f)).filter(Boolean);
   if (escolhidos.length < 4) {
-    const extras = PRODUTOS.filter((p) => escolhidos.indexOf(p) === -1 && Number(p.estoque) > 0);
+    const extras = PRODUTOS.filter((p) => produtosDoBanner.has(p.id) && escolhidos.indexOf(p) === -1 && Number(p.estoque) > 0);
     escolhidos = escolhidos.concat(embaralhar(extras));
   }
   escolhidos = escolhidos.slice(0, 6);
@@ -207,7 +209,6 @@ export function ligarHero() {
   const comParallax = !reduzido && window.innerWidth > 900;
   if (comParallax) {
     const alvos = Array.prototype.slice.call(document.querySelectorAll('[data-parallax]'));
-    const palcoItens = palco.querySelector('.palco__itens');
     let alvoX = 0, alvoY = 0, x = 0, y = 0, rodando = false;
 
     const animar = () => {
@@ -217,9 +218,6 @@ export function ligarHero() {
         const f = Number(el.getAttribute('data-parallax')) || 0.02;
         el.style.transform = `translate3d(${(-x * f * 100).toFixed(2)}px, ${(-y * f * 100).toFixed(2)}px, 0)`;
       });
-      if (palcoItens) {
-        palcoItens.style.transform = `translate3d(${(x * 9).toFixed(2)}px, ${(y * 7).toFixed(2)}px, 0)`;
-      }
       if (Math.abs(alvoX - x) > 0.001 || Math.abs(alvoY - y) > 0.001) requestAnimationFrame(animar);
       else rodando = false;
     };
