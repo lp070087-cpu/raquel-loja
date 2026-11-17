@@ -16,6 +16,7 @@ export interface Config {
     frontendUrl: string;
     production: boolean;
     secret: string;
+    trustProxy?: boolean;
     mail?: {
         host: string;
         port: number;
@@ -33,7 +34,7 @@ export async function buildApp(db: PrismaClient, config: Config) {
     if (!config.origins.length || config.origins.some(o => o === '*' || new URL(o).origin !== o || (config.production && new URL(o).protocol !== 'https:')))
         throw new Error('Explicit origins required; production origins must use HTTPS.');
     const app = Fastify({
-        logger: process.env.NODE_ENV !== 'test', bodyLimit: 32768, trustProxy: false
+        logger: process.env.NODE_ENV !== 'test', bodyLimit: 32768, trustProxy: config.trustProxy ?? false
     });
     await app.register(cookie);
     await app.register(cors, {

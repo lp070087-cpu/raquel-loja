@@ -8,3 +8,5 @@ test-results/
 *.log
 backend/coverage/
 evidence/
+dist-public/
+.vercel/

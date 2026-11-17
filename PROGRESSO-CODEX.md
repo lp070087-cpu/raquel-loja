@@ -1,5 +1,16 @@
 # Progresso Codex — Loja Raquel
 
+## Vercel e Neon — 17/11/2026
+
+- Ler primeiro `PUBLICACAO-VERCEL.md`. Usuário autorizou configurar variáveis e finalizar; confirmou login OAuth oficial. Vercel deixou de retornar 403. Neon API confirmou projeto Raquel e branches production/testing existentes.
+- Criadas 14 variáveis (sete production, sete preview), DATABASE_URL/SESSION_SECRET sensíveis, sem valores em logs/Git. Produção usa chave independente; prévia mantém a chave testing. Configuração idempotente em `scripts/configure-vercel-env.mjs --apply`; preserva variáveis existentes.
+- API Vercel integrada por HTTP nativo Fastify, Node24, mesmo domínio /api, build público restrito a arquivos de loja. Identidade real Neon validada antes de servir qualquer endpoint. Sem nova migração/modelo.
+- Prévia Vercel/testing funcional: `https://raquel-loja-ew91-p1o27qd8j-lp070087-5894s-projects.vercel.app`. Health/catálogo200, ADMIN anônimo401, arquivos privados404. Proteção Vercel mantida; CLI criou credencial de automação para testes privados, sem divulgação.
+- Playwright cloud APROVADO1/1 (1,6min/1,7mintotal): cadastro, cookieSecure/HttpOnly, carrinho/checkoutPENDING/código5, preparaçãoADMIN, STAFF403 e isolamento404, pagamento/retirada, duplicidades409 e clienteCOMPLETED/PAID. Fixtures próprias despromovidas/revogadas emafterAll. Evidências `evidence/deployment/cloud/`.
+- Problema real corrigido: app.inject/light-my-request exigia cookieESM porrequire na nuvem; substituído por HTTP nativo sem alterações de dependências. Tentativas intermediárias não são aprovações. Testes de automação corrigidos para cookie/api e resposta descartada após navegação, sem elevar timeouts.
+- BLOQUEIO: production está vazia (0tabelas/0migrações). Respeitada proibição anterior de migrar production. Script `scripts/prepare-production.mjs` executado SOMENTE em plan/read-only; cinco migrações e catálogo original23produtos/7categorias revisáveis. Não houve escrita de dados em production nem deployprincipal.
+- Próxima ação: obter autorização explícita para inicializar production e importar os produtos originais com valores/estoques do arquivo. Só depois executar comando protegido documentado, validar banco e publicar produção. Sem contas, pedidos ou cupons de teste. Ainda confirmar e-mail da administradora/dados comerciais/SMTP.
+
 ## Ajustes e publicação — 16–17/11/2026
 
 - Ler `VALIDACAO-LINK-PUBLICO.md`. Usuário pediu cards ainda menores, banner mais uniforme, teste do link público e depois autorizou commit/redeploy.

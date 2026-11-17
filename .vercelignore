@@ -1,7 +1,13 @@
-backend/
 node_modules/
 tests/
-scripts/
+/scripts/*
+!/scripts/build-public.mjs
+backend/dist/
+backend/node_modules/
+backend/tests/
+backend/scripts/
+dist-public/
+.vercel/
 evidence/
 test-results/
 playwright-report/

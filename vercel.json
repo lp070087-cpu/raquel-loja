@@ -1,4 +1,9 @@
 {
+  "installCommand": "npm --prefix backend ci --include=dev",
+  "buildCommand": "npm --prefix backend run db:generate && npm --prefix backend run build:vercel && node scripts/build-public.mjs",
+  "outputDirectory": "dist-public",
+  "functions": {"api/index.mjs": {"maxDuration": 60, "includeFiles": "backend/node_modules/.prisma/client/**"}},
+  "rewrites": [{"source": "/api/:path*", "destination": "/api/index"}],
   "cleanUrls": true,
   "trailingSlash": false
 }
