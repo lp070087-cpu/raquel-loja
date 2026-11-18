@@ -12,6 +12,7 @@ export function caminhoLista(path,key) {
   const state=estadoLista(key),query=new URLSearchParams({take:String(state.take),skip:String(state.skip)});
   if(state.q)query.set('q',state.q);
   if(state.status)query.set('status',state.status);
+  if(state.categoryId)query.set('categoryId',state.categoryId);
   return `${path}?${query}`;
 }
 export function controlesLista(root,key,items,data,refresh,{search='',statuses=false}={}) {
@@ -51,14 +52,24 @@ export async function montarFuncionario(root,section) {
   root.innerHTML=carregamentoPainel('Consultando o servidor');
   try {
     if(section==='atendimento') { await montarAtendimento(root); return; }
+    if(section==='dashboard') {
+      const {metrics,recentOrders}=await api('/staff/dashboard');
+      root.innerHTML=`<div class="admin-metrics">${[['Aguardando atendimento',metrics.pending],['Prontos para retirada',metrics.ready],['Retirados',metrics.completed]].map(([title,value])=>`<article class="cartao-metrica"><span class="cartao-metrica__rotulo">${esc(title)}</span><strong class="cartao-metrica__valor">${esc(value)}</strong></article>`).join('')}</div><h2>Últimos pedidos</h2>${tabelaPedidos(recentOrders)}`;return;
+    }
+    if(section==='clientes') {
+      const data=await api(caminhoLista('/staff/customers','staff-customers'));
+      root.innerHTML=`<p class="admin-section-note">Consulta de clientes com pedidos de retirada. Dados limitados ao atendimento; alterações de conta são restritas à administração.</p>${tabelaEquipe(['Cliente','Telefone','Pedidos'],data.customers.map(c=>[esc(c.name),esc(c.phone||'Não informado'),esc(c._count?.orders||0)]))}`;
+      controlesLista(root,'staff-customers',data.customers,data,()=>montarFuncionario(root,section),{search:'Buscar cliente ou telefone'});return;
+    }
     if(section==='historico') {
       const data=await api(caminhoLista('/staff/history','staff-history')),{events}=data;
       root.innerHTML=`<p class="texto-2">Operações registradas no servidor com a sua identificação.</p>${tabelaHistorico(events)}`;
       controlesLista(root,'staff-history',events,data,()=>montarFuncionario(root,section));
     } else {
-      const data=await api(caminhoLista('/staff/orders','staff-orders')),{orders}=data;
+      const key=section==='retiradas'?'staff-pickups':'staff-orders';
+      const data=await api(caminhoLista(section==='retiradas'?'/staff/pickups':'/staff/orders',key)),{orders}=data;
       root.innerHTML=`<div class="admin-actions"><a class="btn" href="#atendimento">Atender uma retirada</a></div><p class="texto-2">Consulte o pedido com o código apresentado pelo cliente. Os códigos não são exibidos nesta lista.</p>${tabelaPedidos(orders)}`;
-      controlesLista(root,'staff-orders',orders,data,()=>montarFuncionario(root,section),{search:'Buscar número do pedido',statuses:true});
+      controlesLista(root,key,orders,data,()=>montarFuncionario(root,section),{search:'Buscar pedido, produto ou cliente',statuses:true});
     }
   } catch(error) {
     root.innerHTML=`<div class="mensagem mensagem--erro" role="alert">${esc(error.message)}</div><button class="btn btn--contorno" data-retry>Tentar novamente</button>`;

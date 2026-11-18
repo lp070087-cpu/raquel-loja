@@ -99,7 +99,7 @@ test('3 — preparação, funcionário separado, pagamento presencial e retirada
  await page.locator(`[data-order="${order.id}"]`).click();await page.getByRole('button',{name:'Marcar pronto para retirada',exact:true}).click();await password(page,fixture.admin.password);await save(page,'/api/admin/orders/'+order.id+'/status','PATCH');
  await page.locator('#btn-sair').click({noWaitAfter:true});await expect(page).toHaveURL(/admin\/login.html/);await employeeLogin(page,fixture.staff,'STAFF');
  await page.setViewportSize({width:390,height:950});
- await expect(page.locator('#menu-admin [data-secao]')).toHaveCount(3);await expect(page.locator('#menu-admin [data-secao="funcionarios"]')).toHaveCount(0);
+ await expect(page.locator('#menu-admin [data-secao]')).toHaveCount(6);await expect(page.locator('#menu-admin [data-secao="funcionarios"]')).toHaveCount(0);
  for(const path of ['/admin/products','/admin/employees','/admin/settings'])expect(await status(page,path)).toBe(403);
  expect(await status(page,'/admin/stock/'+product.id,'POST',{delta:100,reason:'Forbidden',currentPassword:fixture.staff.password})).toBe(403);
  await page.goto('/admin/painel.html',{waitUntil:'commit'});await expect(page).toHaveURL(/admin\/funcionario.html/);await expect(page.locator('html')).toHaveAttribute('data-admin-ready','true');

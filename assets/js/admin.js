@@ -9,7 +9,7 @@ const adminMenu = [
   ['pagamentos','Pagamentos','carteira'], ['relatorios','Relatórios','grafico'],
   ['configuracoes','Configurações','ajuste'],
 ];
-const staffMenu = [['atendimento','Atendimento','loja'], ['pedidos','Pedidos','sacola'], ['historico','Histórico','relogio']];
+const staffMenu = [['atendimento','Atendimento','loja'], ['dashboard','Dashboard','painel'], ['pedidos','Pedidos','sacola'], ['retiradas','Retiradas','caixa'], ['clientes','Clientes','usuarios'], ['historico','Histórico','relogio']];
 export const destinoPorPerfil = user => user?.role === 'ADMIN' ? 'painel.html' : user?.role === 'STAFF' ? 'funcionario.html' : null;
 
 export async function montarAdmin() { return montarPainel('ADMIN'); }
@@ -37,6 +37,12 @@ export async function montarPainel(role) {
   document.querySelector('.admin__usuario .micro').textContent = role === 'ADMIN' ? 'Administradora · sessão individual' : 'Funcionário · sessão individual';
   const avatar = document.querySelector('.admin__usuario .avaliacao__avatar');
   if (avatar) avatar.textContent = user.name.trim().slice(0,2).toUpperCase();
+  document.querySelector('.admin__rodape').prepend(document.querySelector('.admin__usuario'));
+  if(role==='STAFF'){
+    const switchButton=document.createElement('button');switchButton.type='button';switchButton.className='link-simples';switchButton.textContent='Trocar atendente';
+    document.querySelector('.admin__usuario').append(switchButton);
+    switchButton.addEventListener('click',async()=>{switchButton.disabled=true;try{await api('/auth/logout',{method:'POST'});location.replace('login.html?modo=balcao');}catch(error){switchButton.disabled=false;content.prepend(Object.assign(document.createElement('p'),{textContent:error.message,role:'alert'}));}});
+  }
   const menu = role === 'ADMIN' ? adminMenu : staffMenu;
   const nav = document.getElementById('menu-admin');
   nav.innerHTML = menu.map(([id,title,icon]) => `<a class="admin__menu-item" href="#${id}" data-secao="${id}" aria-label="${title}">${icone(icon,18)}<span class="admin__menu-rotulo">${title}</span></a>`).join('');
@@ -48,7 +54,8 @@ export async function montarPainel(role) {
       item.setAttribute('aria-current',String(selected));
     }
     document.getElementById('titulo-secao').textContent = section[1];
-    document.getElementById('subtitulo-secao').textContent = role === 'ADMIN' ? 'Gestão com dados do servidor e ações identificadas.' : 'Atenda pedidos e acompanhe o histórico das suas operações.';
+    const subtitles={atendimento:'Consulte o código, receba e entregue os produtos.',dashboard:'Pedidos e movimentação da loja em um só lugar.',produtos:'Organize os produtos por categoria e atualize o catálogo.',categorias:'Organize as categorias e suas imagens.',pedidos:'Encontre pedidos por número, produto, cliente ou situação.',retiradas:'Acompanhe os pedidos para retirada na loja.',pagamentos:'Consulte os recebimentos confirmados no balcão.',relatorios:'Entenda os pedidos, produtos e recebimentos.',configuracoes:'Mantenha os dados públicos e o atendimento organizados.'};
+    document.getElementById('subtitulo-secao').textContent = subtitles[section[0]] || 'Consulte e gerencie os registros autorizados para sua conta.';
     const slot = document.createElement('div');
     slot.innerHTML = carregamentoPainel(`Carregando ${section[1].toLowerCase()}`);
     content.replaceChildren(slot);

@@ -1,6 +1,7 @@
 import {test,expect} from '../backend/node_modules/@playwright/test/index.mjs';
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
-import {createFixture,retireFixture,browserApi} from './helpers/real-panels.mjs';
+import {randomInt} from 'node:crypto';
+import {createFixture,retireFixture,browserApi,apiStatus} from './helpers/real-panels.mjs';
 let fixture,access;
 const base=process.env.RAQUEL_PREVIEW_URL,folder='evidence/deployment/cloud-navigation';
 test.beforeAll(async()=>{
@@ -17,12 +18,13 @@ test('revisão Vercel: treze módulos administrativos, editores e navegação p�
  await page.goto('/admin/login',{waitUntil:'domcontentloaded'});
  await expect(page.locator('#form-login')).toHaveAttribute('data-auth-ready','true');
  await page.getByLabel('E-mail',{exact:true}).fill(fixture.admin.email);await page.getByLabel('Senha',{exact:true}).fill(fixture.admin.password);await page.getByRole('button',{name:'Entrar no painel',exact:true}).click();
- await expect(page.locator('html')).toHaveAttribute('data-admin-ready','true');await expect(page.locator('#titulo-secao')).toHaveText('Atendimento');
+ await page.waitForURL(/\/admin\/painel(?:\.html)?(?:#.*)?$/);await expect(page.locator('html')).toHaveAttribute('data-admin-ready','true');await expect(page.locator('#titulo-secao')).toHaveText('Atendimento');
+ const filtered=await browserApi(page,'/admin/products?categoryId='+fixture.categoryId+'&q='+encodeURIComponent(fixture.prefix));expect(filtered.products).toHaveLength(1);expect(filtered.products[0].id).toBe(fixture.productId);
  const modules=[['atendimento',null],['dashboard','dashboard'],['produtos','products'],['categorias','categories'],['estoque','stock'],['pedidos','orders'],['clientes','customers'],['funcionarios','employees'],['cupons','coupons'],['pagamentos','payments'],['retiradas','pickups'],['relatorios','reports'],['configuracoes','settings']];
  for(const [name,endpoint] of modules){
    const response=endpoint?page.waitForResponse(r=>new URL(r.url()).pathname===`/api/admin/${endpoint}`&&r.request().method()==='GET'):null;
    await page.locator(`[data-secao="${name}"]`).click();if(response)expect((await response).status()).toBe(200);
-   const content=page.locator('#conteudo-admin');await expect(content).not.toContainText('Consultando os dados da loja…');
+   const content=page.locator('#conteudo-admin');await expect(content.locator('.admin-loading')).toHaveCount(0);
    if(name==='atendimento')await expect(content.getByLabel('Código de retirada',{exact:true})).toBeVisible();
    else if(name==='produtos'||name==='categorias'){
      await expect(content.locator('.admin-item-card').first()).toBeVisible();
@@ -33,8 +35,21 @@ test('revisão Vercel: treze módulos administrativos, editores e navegação p�
    }
    expect((await content.locator('[role="alert"]').allTextContents()).filter(text=>text.trim())).toEqual([]);
    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+   if(process.env.RAQUEL_DEMO_VISIBLE==='1'){await page.evaluate(()=>scrollTo({top:document.documentElement.scrollHeight,behavior:'smooth'}));await page.waitForTimeout(1500);await page.evaluate(()=>scrollTo({top:0,behavior:'smooth'}));await page.waitForTimeout(1000);}
    results.push({module:name,serverRead:!!endpoint,passed:true});console.log('Módulo Vercel verificado: '+name);
  }
+ await page.locator('[data-secao="funcionarios"]').click();await expect(page.locator('[data-set-pin="'+fixture.staff.id+'"]')).toBeVisible();
+ let pin;do{pin=String(randomInt(100000,1000000));}while(/^(\d)\1{5}$/.test(pin)||['123456','654321'].includes(pin));
+ await page.locator('[data-set-pin="'+fixture.staff.id+'"]').click();await page.getByLabel('PIN de 6 dígitos',{exact:true}).fill(pin);await page.getByLabel('Confirmar PIN',{exact:true}).fill(pin);await page.getByLabel('Senha da administração',{exact:true}).fill(fixture.admin.password);
+ const configured=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/admin/employees/'+fixture.staff.id+'/pin'&&r.request().method()==='PUT');await page.locator('.admin-pin-form').getByRole('button',{name:'Definir PIN',exact:true}).click();expect((await configured).status()).toBe(200);await expect(page.locator('.admin-pin-form')).toHaveCount(0);
+ await page.locator('[data-enroll-terminal]').click();await page.getByLabel('Nome do computador',{exact:true}).fill('Computador controlado '+fixture.prefix);await page.getByLabel('Senha da administração',{exact:true}).fill(fixture.admin.password);
+ const enrolled=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/admin/terminals'&&r.request().method()==='POST');await page.locator('.admin-pin-form').getByRole('button',{name:'Autorizar este computador',exact:true}).click();expect((await enrolled).status()).toBe(201);await expect(page.locator('.admin-pin-form')).toHaveCount(0);
+ await browserApi(page,'/auth/logout','POST');
+ await page.goto('/admin/login?modo=balcao');await expect(page.locator('#form-pin')).toBeVisible();await page.getByLabel('Atendente',{exact:true}).selectOption(fixture.staff.id);await page.getByLabel('PIN individual',{exact:true}).fill(pin);await page.getByRole('button',{name:'Iniciar atendimento',exact:true}).click();await page.waitForURL(/\/admin\/funcionario(?:\.html)?(?:#.*)?$/);await expect(page.locator('html')).toHaveAttribute('data-admin-ready','true');
+ await expect(page.locator('#menu-admin a')).toHaveCount(6);
+ for(const name of ['atendimento','dashboard','pedidos','retiradas','clientes','historico']){await page.locator(`[data-secao="${name}"]`).click();await expect(page.locator('.admin-loading')).toHaveCount(0);await expect(page.locator('[role="alert"]')).toHaveCount(0);results.push({staffModule:name,passed:true});console.log('Seção do funcionário verificada: '+name);}
+ for(const path of ['/admin/products','/admin/employees','/admin/settings','/admin/reports','/admin/payments'])expect(await apiStatus(page,path)).toBe(403);
+ const limited=await browserApi(page,'/staff/customers');for(const customer of limited.customers){expect(Object.keys(customer).sort()).toEqual(['_count','id','name','phone']);}
  await browserApi(page,'/auth/logout','POST');
  for(const path of ['/','/catalogo','/catalogo?categoria=capacetes,capas','/localizador','/catalogo?ofertas=1','/contato']){
    const response=await page.goto(path,{waitUntil:'domcontentloaded'});expect(response.status()).toBe(200);
@@ -42,5 +57,5 @@ test('revisão Vercel: treze módulos administrativos, editores e navegação p�
    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
    results.push({route:path,passed:true});console.log('Rota Vercel verificada: '+path);
  }
- expect(errors).toEqual([]);await writeFile(`${folder}/result.json`,JSON.stringify({passed:true,previewUrl:base,realNeonTesting:true,productionWrites:false,results,scriptErrors:errors},null,2));
+ expect(errors).toEqual([]);await writeFile(`${folder}/result.json`,JSON.stringify({passed:true,previewUrl:base,realNeonTesting:true,productionWrites:false,staffPinConfigured:true,terminalAuthorized:true,pinLogin:true,staffSections:6,results,scriptErrors:errors},null,2));
 });

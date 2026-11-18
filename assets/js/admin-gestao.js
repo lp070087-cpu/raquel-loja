@@ -1,7 +1,9 @@
+import {cardsPagamentos,resumoRelatorios,organizarConfiguracoes} from './admin-resumos.js';
+import {montarAcessosBalcao} from './admin-balcao.js';
 import { api } from './api.js';
 import { esc, moeda, avisar } from './utils.js';
 import { montarAtendimento } from './admin-atendimento.js';
-import { tabelaEquipe, tabelaPedidos, dataEquipe, statusPedido, caminhoLista, controlesLista } from './admin-funcionario.js';
+import { tabelaEquipe, tabelaPedidos, dataEquipe, statusPedido, caminhoLista, controlesLista, estadoLista } from './admin-funcionario.js';
 import {camposFotos,enviarFotos} from './admin-fotos.js';
 import {carregamentoPainel} from './admin-carregamento.js';
 
@@ -15,7 +17,7 @@ const numeric = value => Number.isFinite(Number(value)) ? Number(value) : 0;
 const cents = value => Math.round(numeric(value)*100);
 function cardsGestao(items,type) {
   if(!items.length)return '<div class="painel"><div class="painel__corpo">Nenhum registro encontrado.</div></div>';
-  return `<div class="admin-card-grid">${items.map(item=>{
+  return `<div class="admin-card-grid" data-card-kind="${type}">${items.map(item=>{
     const product=type==='product';
     const photo=product?item.images?.[0]?.imageUrl:item.imageUrl;
     const image=photo?`<img class="admin-item-card__photo" src="${esc(photo.startsWith('public/')?'../'+photo:photo)}" alt="${esc(item.name)}" loading="lazy" decoding="async">`:'<div class="admin-item-card__photo admin-item-card__photo--empty">Sem foto</div>';
@@ -96,16 +98,22 @@ export async function montarGestao(root,section,refresh) {
       const [data,{categories}]=await Promise.all([api(caminhoLista('/admin/products','admin-products')),api('/admin/categories')]),{products}=data;
       mount(root,cardsGestao(products,'product'),button('new-product','','Novo produto'));
       controlesLista(root,'admin-products',products,data,refresh,{search:'Buscar por nome ou SKU'});
+      const state=estadoLista('admin-products'),filters=document.createElement('div');
+      filters.className='admin-category-filters';filters.setAttribute('role','group');filters.setAttribute('aria-label','Filtrar produtos por categoria');
+      filters.innerHTML=[{id:'',name:'Todas as categorias'},...categories].map(c=>`<button type="button" class="btn btn--pequeno btn--contorno" data-product-category="${esc(c.id)}" aria-pressed="${(state.categoryId||'')===c.id}">${esc(c.name)}</button>`).join('');
+      root.querySelector('[data-list]').prepend(filters);
+      filters.addEventListener('click',event=>{const button=event.target.closest('[data-product-category]');if(!button)return;state.categoryId=button.dataset.productCategory;state.skip=0;refresh();});
       const editProduct=p=>{
         const form=editor(root,p.id?'Editar produto':'Novo produto',`${input('name','Nome',p.name,'required maxlength="200"')}${input('slug','Identificador da página',p.slug,'required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxlength="150"')}${input('sku','SKU',p.sku,'required maxlength="100"')}${input('price','Preço (R$)',p.priceCents===undefined?'':(p.priceCents/100).toFixed(2),'required type="number" min="0.01" max="1000000" step="0.01"')}${select('categoryId','Categoria',[['','Sem categoria'],...categories.map(c=>[c.id,c.name])],p.categoryId||'')}${!p.id?input('initialStock','Estoque inicial',0,'required type="number" min="0" step="1"'):''}${check('active','Produto ativo',p.active!==false)}<label class="admin-span">Descrição<textarea class="entrada" name="description" required maxlength="10000" rows="4">${esc(p.description||'')}</textarea></label>${camposFotos((p.images||[]).map(image=>image.imageUrl))}${compatibilityRows(p.compatibilities)}${password()}`,async(data,form)=>{
           const photoUrls=await enviarFotos(form); const body={name:data.name.trim(),slug:data.slug.trim(),sku:data.sku.trim(),description:data.description.trim(),priceCents:cents(data.price),categoryId:data.categoryId||null,active:form.elements.active.checked,images:photoUrls.map(safeUrl).filter(Boolean).map((imageUrl,position)=>({imageUrl,position})),compatibilities:readCompatibilities(form),currentPassword:data.currentPassword};
           if(!p.id)body.initialStock=Number(data.initialStock);
           await save(`/admin/products${p.id?`/${encodeURIComponent(p.id)}`:''}`,p.id?'PATCH':'POST',body);
         });
+        if(!p.id)form.elements.name.placeholder='Ex.: Óleo para moto 20W50 1L';
         form.querySelector('[data-add-compat]').addEventListener('click',()=>form.querySelector('[data-compat-rows]').insertAdjacentHTML('beforeend',compatibilityRow()));
         form.addEventListener('click',event=>{const remove=event.target.closest('[data-remove-compat]');if(remove)remove.closest('.admin-compat-row').remove();});
       };
-      root.querySelector('[data-new-product]').addEventListener('click',()=>editProduct({}));
+      root.querySelector('[data-new-product]').addEventListener('click',()=>editProduct({categoryId:state.categoryId||''}));
       root.addEventListener('click',event=>{
         const edit=event.target.closest('[data-edit-product]'),disable=event.target.closest('[data-disable-product]');
         if(edit)editProduct(products.find(p=>p.id===edit.dataset.editProduct));
@@ -128,7 +136,7 @@ export async function montarGestao(root,section,refresh) {
     if(section==='pedidos'||section==='retiradas') {
       const key=`admin-${section}`,data=await api(caminhoLista(section==='retiradas'?'/admin/pickups':'/admin/orders',key)),{orders}=data;
       mount(root,`<p class="texto-2">Pagamentos e entregas de produtos são confirmados no Atendimento, com o código apresentado pelo cliente.</p>${tabelaPedidos(orders,true)}`,`<a class="btn" href="#atendimento">Abrir atendimento</a>`);
-      controlesLista(root,key,orders,data,refresh,section==='pedidos'?{search:'Buscar número do pedido',statuses:true}:{});bindOrders(root,refresh);return;
+      controlesLista(root,key,orders,data,refresh,section==='pedidos'?{search:'Buscar pedido, produto ou cliente',statuses:true}:{});bindOrders(root,refresh);return;
     }
     if(section==='clientes') {
       const data=await api(caminhoLista('/admin/customers','admin-customers')),{customers}=data;
@@ -141,7 +149,7 @@ export async function montarGestao(root,section,refresh) {
       mount(root,`<p class="texto-2">Cada funcionário deve primeiro <a href="../conta.html" target="_blank" rel="noopener">criar sua própria conta na loja</a>. Depois, libere o acesso pelo e-mail cadastrado. A senha individual nunca é definida aqui.</p>${tabelaEquipe(['Nome','E-mail','Perfil','Ação'],employees.map(e=>[esc(e.name),esc(e.email),e.role==='ADMIN'?'Administração':'Funcionário',e.role==='STAFF'?button('revoke-employee',e.id,'Remover acesso da equipe'):'Conta administrativa protegida']))}`,button('grant-employee','','Liberar funcionário'));
       root.querySelector('[data-grant-employee]').addEventListener('click',()=>editor(root,'Liberar acesso de funcionário',input('email','E-mail da conta já cadastrada','','required type="email" maxlength="254"')+password(),async data=>{const {user}=await api(`/admin/employees/find?email=${encodeURIComponent(data.email.trim())}`);await save(`/admin/employees/${encodeURIComponent(user.id)}`,'PATCH',{role:'STAFF',currentPassword:data.currentPassword});},'Autorizar funcionário'));
       controlesLista(root,'admin-employees',employees,data,refresh,{search:'Buscar funcionário por nome ou e-mail'});
-      root.addEventListener('click',event=>{const target=event.target.closest('[data-revoke-employee]');if(target)confirmChange(root,'Remover o acesso de funcionário? As sessões da equipe serão invalidadas pelo servidor.',data=>save(`/admin/employees/${encodeURIComponent(target.dataset.revokeEmployee)}`,'PATCH',{role:'CUSTOMER',currentPassword:data.currentPassword}));});return;
+      root.addEventListener('click',event=>{const target=event.target.closest('[data-revoke-employee]');if(target)confirmChange(root,'Remover o acesso de funcionário? As sessões da equipe serão invalidadas pelo servidor.',data=>save(`/admin/employees/${encodeURIComponent(target.dataset.revokeEmployee)}`,'PATCH',{role:'CUSTOMER',currentPassword:data.currentPassword}));});await montarAcessosBalcao(root,employees);return;
     }
     if(section==='cupons') {
       const data=await api(caminhoLista('/admin/coupons','admin-coupons')),{coupons}=data;
@@ -163,11 +171,11 @@ export async function montarGestao(root,section,refresh) {
     }
     if(section==='pagamentos') {
       const data=await api(caminhoLista('/admin/payments','admin-payments')),{payments}=data;
-      mount(root,`<p class="texto-2">Recebimentos confirmados no balcão. Reembolsos e pagamentos online exigem integração e política próprias; não são executados por esta tela.</p>${tabelaEquipe(['Data','Pedido','Método','Valor','Funcionário'],payments.map(p=>[dataEquipe(p.createdAt),esc(p.order?.orderNumber||p.orderId),esc(({CASH:'Dinheiro',PIX:'Pix presencial',CARD:'Maquininha'})[p.method]||p.method),money(p.amountCents),esc(p.employee?.name||p.employeeId||'Equipe')]))}`);controlesLista(root,'admin-payments',payments,data,refresh);return;
+      mount(root,`<p class="admin-section-note">Pagamentos presenciais confirmados. Esta tela não executa estornos nem cobranças online.</p>${cardsPagamentos(payments)}`);controlesLista(root,'admin-payments',payments,data,refresh);return;
     }
     if(section==='relatorios') {
       const {summary,statuses,payments,topProducts,notice}=await api('/admin/reports');
-      mount(root,`<p class="texto-2">${esc(notice||'O valor em pedidos inclui pedidos ainda pendentes ou cancelados. Recebimentos são somente pagamentos confirmados no balcão.')}</p>${metrics([['Pedidos',summary._count],['Subtotal dos pedidos',money(summary._sum?.subtotalCents)],['Descontos',money(summary._sum?.discountCents)],['Valor total em pedidos',money(summary._sum?.totalCents)]])}<h2>Pedidos por situação</h2>${tabelaEquipe(['Situação','Quantidade'],statuses.map(s=>[esc(statusPedido(s.status)),esc(s._count??0)]))}<h2>Recebimentos por método</h2>${tabelaEquipe(['Método','Quantidade','Total'],payments.map(p=>[esc(({CASH:'Dinheiro',PIX:'Pix presencial',CARD:'Maquininha'})[p.method]||p.method),esc(p._count??0),money(p._sum?.amountCents)]))}<h2>10 produtos mais pedidos</h2>${tabelaEquipe(['Produto','Quantidade','Total'],topProducts.map(p=>[esc(p.nameSnapshot||p.productId),esc(p._sum?.quantity??0),money(p._sum?.totalCents)]))}`);return;
+      mount(root,resumoRelatorios({summary,statuses,payments,topProducts,notice}));return;
     }
     if(section==='configuracoes') {
       const {settings}=await api('/admin/settings');
@@ -178,7 +186,7 @@ export async function montarGestao(root,section,refresh) {
         if(data.state.trim())settings.state=data.state.trim().toUpperCase();
         if(data.zipCode.trim())settings.zipCode=data.zipCode.replace(/\D/g,'');
         await save('/admin/settings','PATCH',{settings,currentPassword:data.currentPassword});
-      });form.querySelector('[data-close-editor]').remove();return;
+      });organizarConfiguracoes(form);form.querySelector('[data-close-editor]').remove();return;
     }
     throw new Error('Seção não encontrada. Selecione uma opção do menu.');
   } catch(error) {

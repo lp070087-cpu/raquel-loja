@@ -22,6 +22,7 @@
 import { api } from '../assets/js/api.js';
 import { icone } from '../assets/js/utils.js';
 import { destinoPorPerfil } from '../assets/js/admin.js';
+import {montarLoginBalcao} from '../assets/js/admin-balcao.js';
 document.getElementById('simbolo-marca').innerHTML = icone('moto',26);
 const form=document.getElementById('form-login'), feedback=document.getElementById('erro-login');
 const state=new URLSearchParams(location.search).get('acesso');
@@ -40,5 +41,6 @@ form.addEventListener('submit',async event=>{
   } catch(error) { feedback.textContent=error.message; button.disabled=false; }
 });
 form.dataset.authReady='true';
+montarLoginBalcao();
 </script>
 </body></html>

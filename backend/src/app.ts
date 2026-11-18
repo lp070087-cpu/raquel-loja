@@ -11,6 +11,7 @@ import { ApiError, hash, token, equal, csrfToken, csrfValid, decrypt, discountFo
 import * as v from './validation.js';
 import {registerCounter} from './counter.js';
 import {registerAdmin} from './admin.js';
+import {registerTerminal} from './terminal.js';
 export interface Config {
     origins: string[];
     frontendUrl: string;
@@ -99,6 +100,10 @@ export async function buildApp(db: PrismaClient, config: Config) {
         });
         if (!session || session.revokedAt || session.expiresAt <= new Date())
             throw new ApiError(401, 'SESSION_EXPIRED', 'Sua sessão expirou. Entre novamente.');
+        if(session.terminalId){
+            const terminal=await db.counterTerminal.findUnique({where:{id:session.terminalId}});
+            if(session.user.role!=='STAFF'||!terminal||terminal.revokedAt||terminal.expiresAt<=new Date()||!equal(hash(req.cookies.raquel_counter_terminal||''),terminal.tokenHash))throw new ApiError(401,'SESSION_EXPIRED','Acesso de balcão expirado ou revogado.');
+        }
         if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method) && !equal(hash(req.cookies.raquel_csrf || ''), session.csrfHash))
             throw new ApiError(403, 'CSRF', 'Sessão de segurança inválida. Recarregue a página.');
         return session;
@@ -669,5 +674,6 @@ export async function buildApp(db: PrismaClient, config: Config) {
     });
     registerCounter(app,db,auth,config.secret);
     registerAdmin(app,db,auth);
+    registerTerminal(app,db,auth,config.production);
     return app;
 }

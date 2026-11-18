@@ -4,10 +4,10 @@ import { mkdir } from 'node:fs/promises';
 // Visual/UI regression with explicit API fixtures, never writes to Neon.
 test('gestão limpa, menu prioritário e vitrine mobile em duas colunas', async ({ page }) => {
   const categories=Array.from({length:4},(_,i)=>({id:`cat-${i}`,name:`Categoria ${i+1}`,slug:`categoria-${i}`,imageUrl:'public/produtos/pneus/pneu-01.jpg',active:true}));
-  const products=Array.from({length:4},(_,i)=>({id:`prod-${i}`,name:`Produto de teste ${i+1}`,sku:`SKU-${i}`,slug:`produto-${i}`,description:'Descrição controlada',priceCents:4590,stock:12,active:true,category:categories[0],categoryId:categories[0].id,images:[{imageUrl:'public/produtos/pneus/pneu-01.jpg'}],compatibilities:[]}));
+  const products=Array.from({length:4},(_,i)=>({id:`prod-${i}`,name:`Produto de teste ${i+1}`,sku:`SKU-${i}`,slug:`produto-${i}`,description:'Descrição controlada',priceCents:4590,stock:12,active:true,category:categories[i],categoryId:categories[i].id,images:[{imageUrl:'public/produtos/pneus/pneu-01.jpg'}],compatibilities:[]}));
   await page.route('**/api/**',async route=>{
     const path=new URL(route.request().url()).pathname;
-    const data=path.endsWith('/auth/me')?{user:{name:'Administradora Teste',role:'ADMIN'}}:path.endsWith('/admin/categories')?{categories}:path.endsWith('/admin/products')?{products,total:4}:path.endsWith('/admin/orders')||path.endsWith('/admin/pickups')?{orders:[{id:'order-1',orderNumber:'RAQ-123',user:{name:'Cliente Teste'},createdAt:new Date().toISOString(),totalCents:4590,status:'PENDING',paymentStatus:'PENDING'}],total:1}:{};
+    const data=path.endsWith('/auth/me')?{user:{name:'Administradora Teste',role:'ADMIN'}}:path.endsWith('/admin/categories')?{categories}:path.endsWith('/admin/products')?{products:products.filter(p=>!new URL(route.request().url()).searchParams.get('categoryId')||p.categoryId===new URL(route.request().url()).searchParams.get('categoryId')),total:new URL(route.request().url()).searchParams.has('categoryId')?1:4}:path.endsWith('/admin/orders')||path.endsWith('/admin/pickups')?{orders:[{id:'order-1',orderNumber:'RAQ-123',user:{name:'Cliente Teste'},createdAt:new Date().toISOString(),totalCents:4590,status:'PENDING',paymentStatus:'PENDING'}],total:1}:{};
     await route.fulfill({json:data,headers:{'access-control-allow-origin':'http://127.0.0.1:8000','access-control-allow-credentials':'true'}});
   });
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
@@ -25,12 +25,17 @@ test('gestão limpa, menu prioritário e vitrine mobile em duas colunas', async 
   await page.locator('[data-edit-product]').first().click();
   await expect(page.locator('[name="sku"]')).toHaveValue('SKU-0');
   await page.getByRole('button',{name:'Cancelar',exact:true}).click();
+  await page.locator('[data-product-category="cat-0"]').click();
+  await expect(page.locator('.admin-item-card')).toHaveCount(1);
+  await page.getByRole('button',{name:'Novo produto',exact:true}).click();await expect(page.locator('[name="categoryId"]')).toHaveValue('cat-0');
+  await page.getByRole('button',{name:'Cancelar',exact:true}).click();
+  await page.locator('[data-product-category=""]').click();await expect(page.locator('.admin-item-card')).toHaveCount(4);
   await mkdir('evidence/admin-layout',{recursive:true});
   for(const width of [320,375,390,430,768,1024,1440]){
     await page.setViewportSize({width,height:900});
     await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
     const columns=await page.locator('.admin-card-grid').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length);
-    expect(columns).toBe(width<=620?1:2);
+    expect(columns).toBe(width<=620?1:width>=1100?3:2);
   }
   await page.evaluate(()=>scrollTo(0,0));
   await page.screenshot({path:'evidence/admin-layout/products-1440.png'});
@@ -86,4 +91,43 @@ test('troca rápida de abas mantém estrutura e ignora resposta da seção anter
  await page.locator('[data-secao="categorias"]').click();await expect(page.locator('.admin-item-card h2')).toHaveText('Categoria visível');
  release();await expect(page.locator('#titulo-secao')).toHaveText('Categorias');await expect(page.locator('.admin-item-card h2')).toHaveText('Categoria visível');
  await page.setViewportSize({width:390,height:900});await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});
+
+test('acabamento de relatórios pagamentos e configurações com usuário no rodapé',async({page})=>{
+ const errors=[];page.on('pageerror',error=>errors.push(error.message));
+ await page.route('**/api/**',async route=>{
+  const path=new URL(route.request().url()).pathname;const data=path.endsWith('/auth/me')?{user:{name:'Lucas Teste',role:'ADMIN'}}:path.endsWith('/admin/reports')?{summary:{_count:3,_sum:{totalCents:24000,discountCents:500}},statuses:[{status:'PENDING',_count:2},{status:'COMPLETED',_count:1}],payments:[{method:'PIX',_count:1,_sum:{amountCents:8000}}],topProducts:[{nameSnapshot:'Óleo de teste',_sum:{quantity:2,totalCents:8000}}]}:path.endsWith('/admin/payments')?{payments:[{orderId:'order-example',order:{orderNumber:'RQ-EXEMPLO'},amountCents:8000,method:'PIX',employee:{name:'Atendente'},createdAt:new Date().toISOString()}],total:1}:path.endsWith('/admin/settings')?{settings:{name:'Loja de teste',addressConfirmed:'false'}}:{};await route.fulfill({json:data});
+ });
+ await page.goto('/admin/painel.html');await expect(page.locator('html')).toHaveAttribute('data-admin-ready','true');
+ await expect(page.locator('.admin__rodape .admin__usuario')).toContainText('Lucas Teste');await expect(page.locator('.admin__topo .admin__usuario')).toHaveCount(0);
+ for(const section of ['relatorios','pagamentos','configuracoes']){
+  await page.locator(`[data-secao="${section}"]`).click();
+  await expect(page.locator('.admin-loading')).toHaveCount(0);
+  if(section==='relatorios')await expect(page.locator('.admin-summary-panel')).toHaveCount(3);
+  if(section==='pagamentos')await expect(page.locator('.admin-payment-card')).toHaveCount(1);
+  if(section==='configuracoes'){await expect(page.locator('.admin-settings-group')).toHaveCount(3);await expect(page.getByLabel('Nome da loja',{exact:true})).toHaveValue('Loja de teste');}
+  for(const width of [320,375,390,430,768,1024,1440]){await page.setViewportSize({width,height:950});await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);}
+  await page.screenshot({path:`evidence/admin-layout/${section}-compact-1440.png`,fullPage:true});
+ }
+ expect(errors).toEqual([]);
+});
+
+test('funcionário usa seis seções no mesmo painel sem menus administrativos',async({page})=>{
+ await page.route('**/api/**',async route=>{
+  const path=new URL(route.request().url()).pathname;await route.fulfill({json:path.endsWith('/auth/me')?{user:{name:'Atendente Teste',role:'STAFF'}}:path.endsWith('/staff/dashboard')?{metrics:{pending:2,ready:1,completed:3},recentOrders:[]}:path.endsWith('/staff/customers')?{customers:[{name:'Cliente',phone:'81999999999',_count:{orders:1}}],total:1}:path.endsWith('/staff/history')?{events:[]}:{orders:[],total:0}});
+ });
+ await page.goto('/admin/funcionario.html');await expect(page.locator('html')).toHaveAttribute('data-admin-ready','true');
+ await expect(page.locator('#menu-admin a')).toHaveCount(6);await expect(page.locator('#menu-admin')).not.toContainText('Configurações');
+ for(const section of ['dashboard','pedidos','retiradas','clientes','historico','atendimento']){await page.locator(`[data-secao="${section}"]`).click();await expect(page.locator('.admin-loading')).toHaveCount(0);await expect(page.locator('[role="alert"]')).toHaveCount(0);}
+});
+
+test('nome e PIN no computador autorizado, sem e-mail no atendimento — API simulada',async({page})=>{
+ let logged=false,received;
+ await page.route('**/api/**',async route=>{
+  const path=new URL(route.request().url()).pathname;
+  if(path.endsWith('/auth/me')&&!logged)return route.fulfill({status:401,json:{message:'Entre na conta'}});
+  if(path.endsWith('/counter/login')){received=route.request().postDataJSON();logged=true;return route.fulfill({json:{user:{name:'Atendente Teste',role:'STAFF'}}});}
+  const data=path.endsWith('/auth/csrf')?{csrfToken:'controlled-csrf'}:path.endsWith('/counter/access')?{terminal:{id:'terminal-test',name:'Balcão teste'},employees:[{id:'staff-test',name:'Atendente Teste'}]}:path.endsWith('/auth/me')?{user:{name:'Atendente Teste',role:'STAFF'}}:{};await route.fulfill({json:data});
+ });
+ await page.goto('/admin/login.html');await page.getByRole('button',{name:'Entrar com nome e PIN',exact:true}).click();await expect(page.getByLabel('E-mail',{exact:true})).toBeHidden();await page.getByLabel('Atendente',{exact:true}).selectOption('staff-test');await page.getByLabel('PIN individual',{exact:true}).fill('492716');await page.getByRole('button',{name:'Iniciar atendimento',exact:true}).click();await expect(page).toHaveURL(/funcionario\.html/);await expect(page.locator('#menu-admin a')).toHaveCount(6);expect(received).toEqual({employeeId:'staff-test',pin:'492716'});await expect(page.getByRole('button',{name:'Trocar atendente',exact:true})).toBeVisible();
 });

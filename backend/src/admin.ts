@@ -51,6 +51,11 @@ function pagination(query: any) {
         take: z.coerce.number().int().min(1).max(100).default(50), skip: z.coerce.number().int().min(0).max(100000).default(0), q: z.string().trim().max(100).optional(), status: z.enum(['PENDING', 'CONFIRMED', 'READY', 'SHIPPED', 'COMPLETED', 'CANCELLED']).optional()
     }).parse(query);
 }
+function orderSearch(q?:string):Prisma.OrderWhereInput {
+    if(!q)return {};
+    const contains={contains:q,mode:'insensitive' as const};
+    return {OR:[{orderNumber:contains},{user:{name:contains}},{items:{some:{OR:[{nameSnapshot:contains},{skuSnapshot:contains}]}}}]};
+}
 function safeOrder(order: any) {
     const { pickupCodeHash, pickupCodeEncrypted, pickupAttempts, pickupLockedUntil, idempotencyKey, ...safe } = order;
     return safe;
@@ -126,11 +131,12 @@ export function registerAdmin(app: FastifyInstance, db: PrismaClient, auth: (req
     app.get('/api/admin/products', async (req) => {
         await admin(req);
         const p = pagination(req.query);
-        const where = p.q ? { OR: [{ name: {
+        const categoryId = z.string().trim().min(1).max(100).optional().parse((req.query as any)?.categoryId);
+        const where = { ...(categoryId ? { categoryId } : {}), ...(p.q ? { OR: [{ name: {
                         contains: p.q, mode: 'insensitive' as const
                     } }, { sku: {
                         contains: p.q, mode: 'insensitive' as const
-                    } }] } : {};
+                    } }] } : {}) };
         return {
             products: (await db.product.findMany({
                 where, include: productInclude, take: p.take, skip: p.skip, orderBy: { name: 'asc' }
@@ -345,9 +351,7 @@ export function registerAdmin(app: FastifyInstance, db: PrismaClient, auth: (req
         await admin(req);
         const p = pagination(req.query);
         const where = {
-            ...(p.status ? { status: p.status } : {}), ...(p.q ? { orderNumber: {
-                    contains: p.q, mode: 'insensitive' as const
-                } } : {})
+            ...(p.status ? { status: p.status } : {}), ...orderSearch(p.q)
         };
         return {
             orders: (await db.order.findMany({
@@ -603,13 +607,35 @@ export function registerAdmin(app: FastifyInstance, db: PrismaClient, auth: (req
                         } } }
             }) };
     });
+    const staffOrderSelect={id:true,orderNumber:true,status:true,paymentStatus:true,fulfillmentType:true,totalCents:true,createdAt:true,pickedUpAt:true,user:{select:{name:true}},_count:{select:{items:true}}} as const;
+    app.get('/api/staff/dashboard',async req=>{
+        await staff(req);
+        const where={fulfillmentType:'PICKUP' as const};
+        const [pending,ready,completed,recentOrders]=await Promise.all([
+            db.order.count({where:{...where,status:{in:['PENDING','CONFIRMED']}}}),
+            db.order.count({where:{...where,status:'READY'}}),
+            db.order.count({where:{...where,status:'COMPLETED'}}),
+            db.order.findMany({where,select:staffOrderSelect,take:6,orderBy:{createdAt:'desc'}})
+        ]);
+        return {metrics:{pending,ready,completed},recentOrders};
+    });
+    app.get('/api/staff/customers',async req=>{
+        await staff(req);const p=pagination(req.query);
+        const where={orders:{some:{fulfillmentType:'PICKUP' as const}},...(p.q?{OR:[{name:{contains:p.q,mode:'insensitive' as const}},{phone:{contains:p.q}}]}:{})};
+        const [customers,total]=await Promise.all([db.user.findMany({where,select:{id:true,name:true,phone:true,_count:{select:{orders:true}}},take:p.take,skip:p.skip,orderBy:{name:'asc'}}),db.user.count({where})]);
+        return {customers,total};
+    });
+    app.get('/api/staff/pickups',async req=>{
+        await staff(req);const p=pagination(req.query);
+        const where:Prisma.OrderWhereInput={fulfillmentType:'PICKUP',status:p.status||{in:['PENDING','CONFIRMED','READY']},...orderSearch(p.q)};
+        const [orders,total]=await Promise.all([db.order.findMany({where,select:staffOrderSelect,take:p.take,skip:p.skip,orderBy:{createdAt:'desc'}}),db.order.count({where})]);
+        return {orders,total};
+    });
     app.get('/api/staff/orders', async (req) => {
         await staff(req);
         const p = pagination(req.query);
         const where = {
-            fulfillmentType: 'PICKUP' as const, ...(p.status ? { status: p.status } : { status: { in: ['PENDING', 'CONFIRMED', 'READY'] as any } }), ...(p.q ? { orderNumber: {
-                    contains: p.q, mode: 'insensitive' as const
-                } } : {})
+            fulfillmentType: 'PICKUP' as const, ...(p.status ? { status: p.status } : { status: { in: ['PENDING', 'CONFIRMED', 'READY'] as any } }), ...orderSearch(p.q)
         };
         return { orders: await db.order.findMany({
                 where, select: {

@@ -219,3 +219,11 @@ Consulta de origem estritamente somente leitura. Copiados 128 produtos para Raqu
 ### Área do Cliente
 
 O código aparece diretamente no card do pedido enquanto estiver disponível. A indicação de como chegar só terá link de rota após confirmação expressa do endereço em Configurações. Até lá, mostra aviso de endereço demonstrativo. Benefícios apresentados são os recursos reais da conta; não existe promessa de cashback sem uma regra comercial definida.
+
+## Nome e PIN no balcão (em homologação)
+
+Na aba Funcionários, a administradora define um PIN individual de seis dígitos para cada funcionário autorizado e confirma sua própria senha. Em cada computador da loja, usa Autorizar este computador e informa um nome como Balcão1. A autorização dura sete dias e pode ser revogada. Nenhum PIN deve ser compartilhado nem enviado no chat.
+
+Na tela de acesso, Entrar com nome e PIN mostra somente os funcionários habilitados, em dispositivo autorizado. O funcionário seleciona seu nome, digita oPIN e recebe somente as seis seções operacionais. Trocar atendente encerra a sessão atual. A mesma conta pode atender em dispositivos diferentes, mas cada computador tem apenas um operadorPIN ativo por vez. Administração completa continua com e-mail e senha. CincoPINs incorretos bloqueiam o perfil por15minutos; revogar dispositivo/desativarPIN invalida as sessões correspondentes.
+
+A nova estrutura foi aplicada somenteemtesting. Ativação de dispositivos reais e definição dePINs reais ficam com a administradora, após a publicação autorizada. Não converter as contas nem os dispositivos controlados dos testes em acessos reais.
