@@ -13,6 +13,7 @@ export function caminhoLista(path,key) {
   if(state.q)query.set('q',state.q);
   if(state.status)query.set('status',state.status);
   if(state.categoryId)query.set('categoryId',state.categoryId);
+  if(state.stockStatus)query.set('stockStatus',state.stockStatus);
   return `${path}?${query}`;
 }
 export function controlesLista(root,key,items,data,refresh,{search='',statuses=false}={}) {

@@ -295,8 +295,11 @@ export function registerAdmin(app: FastifyInstance, db: PrismaClient, auth: (req
     app.get('/api/admin/stock', async (req) => {
         await admin(req);
         const p = pagination(req.query);
-        const where=p.q?{OR:[{name:{contains:p.q,mode:'insensitive' as const}},{sku:{contains:p.q,mode:'insensitive' as const}}]}:{};
+        const stockStatus=z.enum(['all','low','out']).default('all').parse((req.query as any)?.stockStatus);
+        const where={...(p.q?{OR:[{name:{contains:p.q,mode:'insensitive' as const}},{sku:{contains:p.q,mode:'insensitive' as const}}]}:{}),...(stockStatus==='low'?{stock:{gt:0,lte:5}}:stockStatus==='out'?{stock:0}:{})};
+        const [inventory,lowStock,outOfStock]=await Promise.all([db.product.aggregate({_count:true,_sum:{stock:true}}),db.product.count({where:{stock:{gt:0,lte:5}}}),db.product.count({where:{stock:0}})]);
         return {
+            summary:{totalProducts:inventory._count,totalUnits:inventory._sum.stock||0,lowStock,outOfStock,lowStockThreshold:5},
             total:await db.product.count({where}),
             products: await db.product.findMany({
                 where,

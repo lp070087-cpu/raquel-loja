@@ -21,6 +21,15 @@ test('revisão Vercel: treze módulos administrativos, editores e navegação p�
  await expect(page.locator('#form-login')).toHaveAttribute('data-auth-ready','true');
  await page.getByLabel('E-mail',{exact:true}).fill(fixture.admin.email);await page.getByLabel('Senha',{exact:true}).fill(fixture.admin.password);await page.getByRole('button',{name:'Entrar no painel',exact:true}).click();
  await page.waitForURL(/\/admin\/painel(?:\.html)?(?:#.*)?$/);await expect(page.locator('html')).toHaveAttribute('data-admin-ready','true');await expect(page.locator('#titulo-secao')).toHaveText('Atendimento');
+ if(process.env.RAQUEL_STOCK_ONLY==='1'){
+   const read=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/admin/stock');await page.locator('[data-secao="estoque"]').click();expect((await read).status()).toBe(200);await expect(page.locator('.admin-stock-overview .cartao-metrica')).toHaveCount(4);
+   const data=await browserApi(page,'/admin/stock'),total=(await browserApi(page,'/admin/products?take=1')).total;
+   expect(data.summary.totalProducts).toBe(total);expect(data.summary.totalUnits).toBeGreaterThanOrEqual(0);expect(data.summary.lowStockThreshold).toBe(5);
+   await expect(page.locator('.admin-stock-overview .cartao-metrica__valor').nth(0)).toHaveText(String(total));
+   for(const [status,key] of [['low','lowStock'],['out','outOfStock']]){const response=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/admin/stock'&&new URL(r.url()).searchParams.get('stockStatus')===status);await page.locator(`[data-stock-status="${status}"]`).click();const reply=await response;expect(reply.status()).toBe(200);const subset=await reply.json();expect(subset.total).toBe(data.summary[key]);expect(subset.products.every(p=>status==='low'?p.stock>0&&p.stock<=5:p.stock===0)).toBe(true);}
+   await page.locator('[data-stock-status="all"]').click();await expect(page.locator('.admin-loading')).toHaveCount(0);await page.screenshot({path:folder+'/stock-real-desktop.png',fullPage:true});expect(errors).toEqual([]);await browserApi(page,'/auth/logout','POST');
+   await writeFile(folder+'/stock-result.json',JSON.stringify({passed:true,previewUrl:base,realNeonTesting:true,productionWrites:false,summary:data.summary,thresholdFive:true,globalCountMatchesDatabaseCatalog:true,filters:true,scriptErrors:errors},null,2));return;
+ }
  const filtered=await browserApi(page,'/admin/products?categoryId='+fixture.categoryId+'&q='+encodeURIComponent(fixture.prefix));expect(filtered.products).toHaveLength(1);expect(filtered.products[0].id).toBe(fixture.productId);
  const modules=[['atendimento',null],['dashboard','dashboard'],['produtos','products'],['categorias','categories'],['estoque','stock'],['pedidos','orders'],['clientes','customers'],['funcionarios','employees'],['cupons','coupons'],['pagamentos','payments'],['retiradas','pickups'],['relatorios','reports'],['configuracoes','settings']];
  for(const [name,endpoint] of process.env.RAQUEL_PENDING_COUNTER_ONLY==='1'?[]:modules){

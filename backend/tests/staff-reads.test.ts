@@ -5,7 +5,7 @@ import {registerAdmin} from '../src/admin.js';
 describe('staff operational reads and admin category filtering — simulated ORM',()=>{
   async function fixture(role='STAFF'){
     const app=Fastify();
-    const db:any={product:{findMany:vi.fn(async()=>[]),count:vi.fn(async()=>0)},order:{count:vi.fn(async()=>2),findMany:vi.fn(async()=>[])},user:{findMany:vi.fn(async()=>[]),count:vi.fn(async()=>0)}};
+    const db:any={product:{findMany:vi.fn(async()=>[]),count:vi.fn(async()=>0),aggregate:vi.fn(async()=>({_count:40,_sum:{stock:500}}))},adminAudit:{findMany:vi.fn(async()=>[])},order:{count:vi.fn(async()=>2),findMany:vi.fn(async()=>[])},user:{findMany:vi.fn(async()=>[]),count:vi.fn(async()=>0)}};
     app.setErrorHandler((error:any,_req,reply)=>reply.code(error.status||error.statusCode|| (error.name==='ZodError'?400:500)).send({error:error.name}));
     registerAdmin(app,db,async()=>({user:{role},userId:'controlled-actor'}));return {app,db};
   }
@@ -32,6 +32,16 @@ describe('staff operational reads and admin category filtering — simulated ORM
       expect((await app.inject('/api/admin/products?categoryId=oil&q=20W50&take=25&skip=25')).statusCode).toBe(200);
       const query=db.product.findMany.mock.calls[0][0];expect(query).toMatchObject({where:{categoryId:'oil'},take:25,skip:25});expect(query.where.OR).toHaveLength(2);expect(db.product.count.mock.calls[0][0].where).toEqual(query.where);
       expect((await app.inject('/api/admin/products?categoryId='+ 'x'.repeat(101))).statusCode).toBe(400);
+    }finally{await app.close();}
+  });
+  it('stock overview uses the whole inventory and separates zero from one through five',async()=>{
+    const {app,db}=await fixture('ADMIN');try{
+      db.product.count.mockImplementation(async({where}:any)=>where.stock===0?2:where.stock?.lte===5?4:7);
+      const result=await app.inject('/api/admin/stock?stockStatus=low&q=oleo&take=25&skip=25');expect(result.statusCode).toBe(200);
+      expect(result.json().summary).toEqual({totalProducts:40,totalUnits:500,lowStock:4,outOfStock:2,lowStockThreshold:5});
+      expect(db.product.findMany.mock.calls[0][0]).toMatchObject({where:{stock:{gt:0,lte:5}},take:25,skip:25});
+      expect(db.product.count.mock.calls.some(([query]:any[])=>query.where.stock===0)).toBe(true);
+      expect((await app.inject('/api/admin/stock?stockStatus=invalid')).statusCode).toBe(400);
     }finally{await app.close();}
   });
 });

@@ -1,6 +1,22 @@
 import { test, expect } from '../backend/node_modules/@playwright/test/index.mjs';
 import { mkdir } from 'node:fs/promises';
 
+test('estoque com indicadores globais e filtro de baixo até cinco unidades — API simulada',async({page})=>{
+ const products=[0,1,5,6].map((stock,i)=>({id:'stock-'+i,name:'Produto '+i,sku:'SKU-'+i,priceCents:1000,stock,active:true}));
+ await page.route('**/api/**',async route=>{
+  const url=new URL(route.request().url()),path=url.pathname,status=url.searchParams.get('stockStatus');
+  const selected=products.filter(p=>status==='low'?p.stock>0&&p.stock<=5:status==='out'?p.stock===0:true);
+  await route.fulfill({json:path.endsWith('/auth/me')?{user:{name:'Admin Teste',role:'ADMIN'}}:path.endsWith('/admin/stock')?{summary:{totalProducts:40,totalUnits:500,lowStock:4,outOfStock:2,lowStockThreshold:5},products:selected,movements:[],total:selected.length}:{}});
+ });
+ await page.goto('/admin/painel.html#estoque');await expect(page.locator('.admin-stock-overview .cartao-metrica')).toHaveCount(4);
+ await expect(page.locator('.admin-stock-overview')).toContainText('500');await expect(page.locator('.admin-stock-badge--low')).toHaveCount(2);await expect(page.locator('.admin-stock-badge--out')).toHaveCount(1);
+ await page.locator('[data-stock-status="low"]').click();await expect(page.locator('[data-stock]')).toHaveCount(2);await expect(page.locator('.admin-stock-badge--out')).toHaveCount(0);
+ await page.locator('[data-stock-status="out"]').click();await expect(page.locator('[data-stock]')).toHaveCount(1);await expect(page.locator('.admin-stock-badge--out')).toHaveCount(1);
+ await page.locator('[data-stock-status="all"]').click();await expect(page.locator('[data-stock]')).toHaveCount(4);
+ for(const width of [320,375,390,430,768,1024,1440]){await page.setViewportSize({width,height:950});await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);}
+ await mkdir('evidence/admin-layout',{recursive:true});await page.screenshot({path:'evidence/admin-layout/stock-overview-1440.png',fullPage:true});
+});
+
 // Visual/UI regression with explicit API fixtures, never writes to Neon.
 test('gestão limpa, menu prioritário e vitrine mobile em duas colunas', async ({ page }) => {
   const categories=Array.from({length:4},(_,i)=>({id:`cat-${i}`,name:`Categoria ${i+1}`,slug:`categoria-${i}`,imageUrl:'public/produtos/pneus/pneu-01.jpg',active:true}));
