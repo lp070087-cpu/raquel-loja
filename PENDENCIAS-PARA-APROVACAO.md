@@ -9,7 +9,7 @@
 - Acesso por nome e PIN em dispositivo autorizado; revogação, troca de atendente, bloqueio por tentativas e sessões vinculadas ao computador.
 - Consulta de pedidos por número, cliente, produto/SKU e situação.
 
-## Ainda não concluído ou dependente de dados/autorização
+## Lista histórica de pendências (atualização abaixo)
 
 1. **Venda avulsa/PDV diretamente no balcão:** o atendimento atual recebe pedidos criados pelo cliente no site. Montar um carrinho novo para cliente que chega à loja, calcular troco e emitir venda avulsa ainda não está implementado.
 2. **Cadastro por cópia/variações de produto:** é possível cadastrar/editar produtos e escolher categoria. Ainda não existe botão para duplicar um produto e alterar apenas marca, volume ou tamanho. O exemplo no campo de nome não é um cadastro automático.
@@ -23,3 +23,7 @@
 10. **Integrações completas:** a suíte local de 42 integrações Prisma permanece sem nova aprovação por conexão TCP intermitente. Os testes HTTP/Vercel/Neon reais devem ser descritos pelo que efetivamente executarem, sem substituir essa contagem.
 
 Entrega está desativada por decisão comercial. Pagamento exclusivamente presencial. Não introduzir cobrança online ou reconstruir o projeto para tratar essas pendências.
+
+
+## Atualização efetiva — 18/11/2026
+Itens3e5resolvidos:catálogoMarquinhoimportadoemprodução e estruturaPIN/publicação concluídas.128copiados,122ativos,6inativossem preço,23originais mantidos. Preços eestoque centralconferidoscomorigemread-only. Continuam revisão comercialdos23originais e dadosfaltantes(6preços/120fotos/aplicações),PDVavulso,cadastroporcópia,dadoscomerciais,SMTP,reembolso ecashbacksemregra. Não repetir migraçãoouimportação,nem restaurarsaldos por nova carga.

@@ -227,3 +227,7 @@ Na aba Funcionários, a administradora define um PIN individual de seis dígitos
 Na tela de acesso, Entrar com nome e PIN mostra somente os funcionários habilitados, em dispositivo autorizado. O funcionário seleciona seu nome, digita oPIN e recebe somente as seis seções operacionais. Trocar atendente encerra a sessão atual. A mesma conta pode atender em dispositivos diferentes, mas cada computador tem apenas um operadorPIN ativo por vez. Administração completa continua com e-mail e senha. CincoPINs incorretos bloqueiam o perfil por15minutos; revogar dispositivo/desativarPIN invalida as sessões correspondentes.
 
 A nova estrutura foi aplicada somenteemtesting. Ativação de dispositivos reais e definição dePINs reais ficam com a administradora, após a publicação autorizada. Não converter as contas nem os dispositivos controlados dos testes em acessos reais.
+
+
+## Publicado em produção — 18/11/2026
+EstruturaPIN e acabamento agora publicados no domínio oficial. A administradora configura os computadores ePINs individuais emFuncionários, semusarcontasdeteste. Estoque possui4indicadoresglobais e filtros1a5/zerados.128produtosMarquinhocopiadoscomestoquecentral,122ativos e6sem preço inativos;23originais preservados. Origemintacta. Nenhumusuário,pedidoouPINdetestefoi copiado.
