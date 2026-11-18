@@ -16,6 +16,7 @@ export function carregarLoja() {
    if(has('city'))LOJA.cidade=settings.city;
    if(has('state'))LOJA.estado=settings.state;
    if(has('openingHours'))LOJA.horario=[{dia:'Atendimento',hora:settings.openingHours}];
+   LOJA.enderecoConfirmado=settings.addressConfirmed==='true';
    document.documentElement.dataset.loja='servidor';return true;
   } catch {document.documentElement.dataset.loja='padrao';return false;}
  })();

@@ -24,12 +24,12 @@ test('etapa pendente — preparação, funcionário, pagamento, retirada e retor
  for(const path of ['/admin/products','/admin/employees','/admin/settings'])expect(await apiStatus(page,path)).toBe(403);
  expect(await apiStatus(page,'/admin/stock/'+fixture.productId,'POST',{delta:100,reason:'Forbidden',currentPassword:fixture.staff.password})).toBe(403);
  await page.goto('/admin/painel.html',{waitUntil:'commit'});await expect(page).toHaveURL(/admin\/funcionario.html/);await expect(page.locator('html')).toHaveAttribute('data-admin-ready','true');
- await section(page,'atendimento');await page.getByLabel('Número ou identificação do pedido').fill(order.orderNumber);await page.getByLabel('Código de retirada',{exact:true}).fill(code);await page.getByRole('button',{name:'Consultar pedido',exact:true}).click();await expect(page.locator('#atendimento-resultado')).toContainText(order.orderNumber);
+ await section(page,'atendimento');await page.getByLabel('Código de retirada',{exact:true}).fill(code);await page.getByRole('button',{name:'Consultar pedido',exact:true}).click();await expect(page.locator('#atendimento-resultado')).toContainText(order.orderNumber);
  expect(await apiStatus(page,'/staff/orders/'+order.id+'/pickup','POST',{code})).toBe(409);
- page.on('dialog',dialog=>dialog.accept());await page.getByLabel('Método recebido no balcão').selectOption('CASH');await submit(page,'/staff/orders/'+order.id+'/payment','POST','Confirmar recebimento do pagamento');
+ page.on('dialog',dialog=>dialog.accept());await page.getByLabel('Método recebido no balcão').selectOption('CASH');await page.locator('[data-confirm-delivery]').check();await submit(page,'/staff/orders/'+order.id+'/complete','POST','Receber e entregar');
  expect(await apiStatus(page,'/staff/orders/'+order.id+'/payment','POST',{code,method:'CASH'})).toBe(409);
  expect(await apiStatus(page,'/staff/orders/'+order.id+'/cancel','POST',{code,reason:'Paid cancellation blocked'})).toBe(409);
- await submit(page,'/staff/orders/'+order.id+'/pickup','POST','Confirmar entrega dos produtos');await expect(page.locator('#atendimento-resultado')).toContainText('Situação: Retirado');expect(await apiStatus(page,'/staff/orders/'+order.id+'/pickup','POST',{code})).toBe(409);
+ await expect(page.locator('#atendimento-resultado')).toContainText('Atendimento concluído');expect(await apiStatus(page,'/staff/orders/'+order.id+'/pickup','POST',{code})).toBe(409);
  for(const width of [320,375,390,430,768,1024,1440]){await page.setViewportSize({width,height:950});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);}
  await page.setViewportSize({width:390,height:950});await screenshot(page,'pending-staff-pickup-390');
  await section(page,'historico');await expect(page.locator('#conteudo-admin')).toContainText(order.orderNumber);

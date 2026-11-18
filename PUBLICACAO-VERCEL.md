@@ -36,28 +36,16 @@ Evidências locais, não versionadas: `evidence/deployment/environment-result.js
 
 Prévia validada: https://raquel-loja-ew91-p1o27qd8j-lp070087-5894s-projects.vercel.app
 
-## Produção: bloqueio explícito preservado
+## Produção inicializada mediante autorização específica
 
-Leitura real confirmou **zero tabelas e zero migrações** em production. Testing possui as cinco migrações e 23 tabelas. As identidades reais das branches são diferentes e conferem com `config/deployment.json`.
+Após a leitura inicial do banco vazio, o usuário autorizou expressamente a estrutura e o catálogo original. As cinco migrações foram aplicadas uma única vez; importados **23 produtos originais e sete categorias**, sem copiar clientes, pedidos, sessões, pagamentos ou cupons de testing. A conferência real está em `evidence/deployment/production-database.json`. Não repetir a inicialização nem usar seed demonstrativo geral em produção.
 
-A regra anterior do usuário proíbe migrações em production. Não foi aplicada nenhuma nem promovida a prévia. O site principal permanece na versão anterior até autorização específica para inicializar o banco e publicar a versão integrada.
+Loja oficial: https://raquel-loja-ew91.vercel.app/ . A API de produção respondeu 200 com catálogo real; arquivos privados continuam inacessíveis. A administradora cadastrou sua própria conta e recebeu o papel ADMIN por autorização, com senha preservada e auditoria. Login individual em `/admin/login`; não existe senha compartilhada fornecida pelo projeto.
 
-Plano revisado: cinco migrações existentes, sem DROP/TRUNCATE/DELETE de dados; criação de estrutura no banco vazio. Importação opcional somente dos **23 produtos originais e sete categorias**, com imagens, SKUs estáveis e compatibilidades; sem copiar usuários, pedidos, sessões, pagamentos ou cupons do testing. Preços/estoques são os atuais do arquivo original e precisam de confirmação comercial. Plano e checksums em `evidence/deployment/production-plan.json`.
+A autorização anterior de inicialização não permite futuras migrações ou testes destrutivos em produção. Nesta revisão do atendimento, as escritas e os pagamentos simulados ocorreram exclusivamente em testing.
 
-Somente leitura, seguro para retomar:
-
-```powershell
-node scripts/prepare-production.mjs
-```
-
-**Executar o próximo comando apenas após autorização explícita de produção e confirmação de uso do catálogo original:**
-
-```powershell
-node scripts/prepare-production.mjs --apply-production --confirm-initialize-empty-production --with-catalog
-```
-
-O executor verifica branch real e banco vazio, revisa a lista exata de migrações, não reseta/baselina banco e suprime a saída bruta do Prisma. Depois é necessário conferir persistência/health de produção antes do deploy principal. Não usar seed demonstrativo geral em produção, pois ele inclui cupons.
+Prévia atual do atendimento: https://raquel-loja-ew91-qn001cphk-lp070087-5894s-projects.vercel.app . Fluxos de compra e retirada executados em navegador visível/maximizado, incluindo CASH, PIX e CARD, e revisão real dos 13 módulos. Relatórios em `evidence/deployment/cloud-desktop/` e `cloud-navigation/`.
 
 ## Próximas informações operacionais
 
-Identificação/e-mail da administradora e cadastro individual com senha escolhida por ela; nenhum acesso real com senha fixa. Dados comerciais/fiscais confirmados, SMTP e política de reembolso continuam pendentes. Não declarar o projeto totalmente finalizado enquanto essas etapas e a produção real não forem validadas.
+Demais funcionários devem ter contas individuais e permissões concedidas pela administradora; nunca usar as fixtures de testing como acessos reais. Dados comerciais/fiscais confirmados, revisão comercial de preços/estoques, SMTP e política de reembolso continuam pendentes. Entrega permanece desativada até existir configuração e operação próprias.

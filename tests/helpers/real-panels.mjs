@@ -4,6 +4,7 @@ import {fileURLToPath} from 'node:url';
 import {mkdir,writeFile,stat} from 'node:fs/promises';
 const backend=fileURLToPath(new URL('../../backend/',import.meta.url));
 export async function createFixture(){
+ if(process.env.RAQUEL_CLOUD_HTTP_FIXTURE==='1')return(await import('../../scripts/cloud-fixture.mjs')).createCloudFixture();
  for(const path of ['src/admin','src/app','scripts/admin-browser-fixture','scripts/retire-panel-fixtures','scripts/panel-fixture-selector'])if((await stat(backend+'dist/'+path+'.js')).mtimeMs<(await stat(backend+path+'.ts')).mtimeMs)throw new Error('Build required before real panel tests.');
  return new Promise((resolve,reject)=>{
   const child=fork('dist/scripts/admin-browser-fixture.js',[],{cwd:backend,execArgv:[],stdio:['ignore','ignore','ignore','ipc']});
@@ -14,6 +15,7 @@ export async function createFixture(){
 }
 export async function retireFixture(fixture){
  if(!fixture)return;
+ if(fixture.cloudHttp)return(await import('../../scripts/cloud-fixture.mjs')).retireCloudFixture(fixture);
  await new Promise((resolve,reject)=>{
   const child=spawn(process.execPath,['dist/scripts/retire-panel-fixtures.js','--testing','--confirm-retire-fixtures','--prefix='+fixture.prefix],{cwd:backend,stdio:'ignore'});
   const timer=setTimeout(()=>{child.kill();reject(new Error('Controlled privilege cleanup timed out.'));},60000);

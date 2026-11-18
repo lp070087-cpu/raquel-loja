@@ -53,8 +53,8 @@ test('1 — administração real e gestão de produtos, estoque, equipe e cupons
  await page.getByLabel('Nome',{exact:true}).fill('Categoria '+prefix);await page.getByLabel('Identificador',{exact:true}).fill(prefix);await password(page,fixture.admin.password);
  const category=(await save(page,'/api/admin/categories')).category;
  await section(page,'produtos');await page.getByRole('button',{name:'Novo produto',exact:true}).click();
- for(const [label,value] of [['Nome','Peça '+prefix],['Identificador da página',prefix],['SKU',prefix],['Preço (R$)','12.34'],['Estoque inicial','5'],['Descrição','Peça de teste controlada em testing'],['Fotos — uma URL ou caminho público por linha','public/produtos/oleos/oleo-01.jpg']])await page.getByLabel(label,{exact:true}).fill(value);
- await page.getByLabel('Categoria',{exact:true}).selectOption(category.id);
+ for(const [label,value] of [['Nome','Peça '+prefix],['Identificador da página',prefix],['SKU',prefix],['Preço (R$)','12.34'],['Estoque inicial','5'],['Descrição','Peça de teste controlada em testing']])await page.getByLabel(label,{exact:true}).fill(value);
+ await page.locator('[name="photoFiles"]').setInputFiles('public/produtos/oleos/oleo-01.jpg');await page.getByLabel('Categoria',{exact:true}).selectOption(category.id);
  await page.getByLabel('Marca',{exact:true}).fill('Honda');await page.getByLabel('Modelo',{exact:true}).fill('CG 160');await page.getByLabel('Versão (opcional)',{exact:true}).fill('Fan');await page.getByLabel('Ano inicial',{exact:true}).fill('2020');await page.getByLabel('Ano final',{exact:true}).fill('2024');await password(page,fixture.admin.password);
  await captureWidths(page,'admin-product-editor');
  product=(await save(page,'/api/admin/products')).product;expect(product.priceCents).toBe(1234);
@@ -104,12 +104,12 @@ test('3 — preparação, funcionário separado, pagamento presencial e retirada
  expect(await status(page,'/admin/stock/'+product.id,'POST',{delta:100,reason:'Forbidden',currentPassword:fixture.staff.password})).toBe(403);
  await page.goto('/admin/painel.html',{waitUntil:'commit'});await expect(page).toHaveURL(/admin\/funcionario.html/);await expect(page.locator('html')).toHaveAttribute('data-admin-ready','true');
  await section(page,'atendimento');await expect(page.getByRole('heading',{name:'Atendimento de retirada'})).toBeVisible();
- await page.getByLabel('Número ou identificação do pedido').fill(order.orderNumber);await page.getByLabel('Código de retirada',{exact:true}).fill(code);await page.getByRole('button',{name:'Consultar pedido',exact:true}).click();await expect(page.locator('#atendimento-resultado')).toContainText(order.orderNumber);
+ await page.getByLabel('Código de retirada',{exact:true}).fill(code);await page.getByRole('button',{name:'Consultar pedido',exact:true}).click();await expect(page.locator('#atendimento-resultado')).toContainText(order.orderNumber);
  expect(await status(page,'/staff/orders/'+order.id+'/pickup','POST',{code})).toBe(409);
- page.on('dialog',dialog=>dialog.accept());await page.getByLabel('Método recebido no balcão').selectOption('CASH');await save(page,'/api/staff/orders/'+order.id+'/payment','POST','Confirmar recebimento do pagamento');
+ page.on('dialog',dialog=>dialog.accept());await page.getByLabel('Método recebido no balcão').selectOption('CASH');await page.locator('[data-confirm-delivery]').check();await save(page,'/api/staff/orders/'+order.id+'/complete','POST','Receber e entregar');
  expect(await status(page,'/staff/orders/'+order.id+'/payment','POST',{code,method:'CASH'})).toBe(409);
  expect(await status(page,'/staff/orders/'+order.id+'/cancel','POST',{code,reason:'Paid cancellation blocked'})).toBe(409);
- await save(page,'/api/staff/orders/'+order.id+'/pickup','POST','Confirmar entrega dos produtos');await expect(page.locator('#atendimento-resultado')).toContainText('Situação: Retirado');expect(await status(page,'/staff/orders/'+order.id+'/pickup','POST',{code})).toBe(409);
+ await expect(page.locator('#atendimento-resultado')).toContainText('Atendimento concluído');expect(await status(page,'/staff/orders/'+order.id+'/pickup','POST',{code})).toBe(409);
  await captureWidths(page,'staff-counter');await section(page,'historico');await expect(page.locator('#conteudo-admin')).toContainText(order.orderNumber);
  expect(await page.evaluate(async actorId=>{const {api}=await import('/assets/js/api.js');const {events}=await api('/staff/history');return events.length>0&&events.every(e=>e.actor.id===actorId);},fixture.staff.id)).toBe(true);
  await page.locator('#btn-sair').click({noWaitAfter:true});await expect(page).toHaveURL(/admin\/login.html/);

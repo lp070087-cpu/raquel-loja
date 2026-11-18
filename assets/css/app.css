@@ -1389,3 +1389,17 @@ textarea.entrada { min-height: 110px; resize: vertical; }
   .quantidade button { width: 38px; }
   .hero__ctas .btn { flex: 1; min-width: 140px; }
 }
+
+/* Duas colunas somente nas vitrines de produtos; demais grades preservadas. */
+@media (max-width: 620px) {
+  .grade:has(> .produto-card) { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+  .grade > .produto-card { min-width: 0; border-radius: 14px; }
+  .grade > .produto-card .produto-card__midia { padding: 12px; }
+  .grade > .produto-card .produto-card__corpo { padding: 12px 10px; }
+  .grade > .produto-card .produto-card__nome { font-size: .82rem; }
+  .grade > .produto-card .produto-card__preco { font-size: 1.1rem; }
+  .grade > .produto-card .produto-card__cat { font-size: .62rem; letter-spacing: .04em; }
+  .grade > .produto-card .produto-card__compat { font-size: .7rem; overflow-wrap: anywhere; }
+  .grade > .produto-card .produto-card__rodape .btn { padding: 10px 6px; font-size: .75rem; white-space: normal; min-height: 44px; }
+}
+.retirada-local{margin:18px 0;padding:20px;border:1px solid var(--borda);border-radius:16px;background:var(--fundo-2);text-align:left}.retirada-local h3{font-size:1rem;margin:0 0 8px}.retirada-local p{font-size:.875rem;color:var(--texto-2);line-height:1.6;margin:0 0 12px}

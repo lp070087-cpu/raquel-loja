@@ -187,20 +187,20 @@ test('pagamento presencial e retirada no painel existente com Neon real',async({
   await expect(page.getByRole('heading',{name:'Atendimento de retirada'})).toBeVisible();
   console.log('Real counter browser: employee authenticated in existing panel.');
   page.on('dialog',d=>d.type()==='prompt'?d.accept('Cancelamento controlado no navegador'):d.accept());
-  const lookup=async(o)=>{await page.getByLabel('Número ou identificação do pedido').fill(o.orderNumber);await page.getByLabel('Código de retirada',{exact:true}).fill(o.pickupCode);await page.getByRole('button',{name:'Consultar pedido',exact:true}).click();await expect(page.locator('#atendimento-resultado')).toContainText(o.orderNumber);};
+  const lookup=async(o)=>{await page.getByLabel('Código de retirada',{exact:true}).fill(o.pickupCode);await page.getByRole('button',{name:'Consultar pedido',exact:true}).click();await expect(page.locator('#atendimento-resultado')).toContainText(o.orderNumber);};
   const rejected=async(o,action,body)=>page.evaluate(async({id,action,body})=>{const {api}=await import('/assets/js/api.js');try{await api(`/staff/orders/${id}/${action}`,{method:'POST',body});return 200;}catch(e){return e.status;}},{id:o.id,action,body});
   let index=0;
   for(const method of ['CASH','PIX','CARD']){
     const o=orders[index];await lookup(o);await expect(page.locator('#atendimento-resultado')).toContainText('45,67');
     expect(await rejected(o,'pickup',{code:o.pickupCode})).toBe(409);
     await page.getByLabel('Método recebido no balcão').selectOption(method);
-    const paid=page.waitForResponse(r=>r.url().endsWith('/payment')&&r.request().method()==='POST');await page.getByRole('button',{name:'Confirmar recebimento do pagamento',exact:true}).click();expect((await paid).status()).toBe(200);
-    await expect(page.getByRole('button',{name:'Confirmar entrega dos produtos',exact:true})).toBeVisible();
+    await page.locator('[data-confirm-delivery]').check();
+    const paid=page.waitForResponse(r=>r.url().endsWith('/complete')&&r.request().method()==='POST');await page.getByRole('button',{name:'Receber e entregar',exact:true}).click();expect((await paid).status()).toBe(200);
+    await expect(page.locator('#atendimento-resultado')).toContainText('Atendimento concluído');
     expect(await rejected(o,'payment',{code:o.pickupCode,method})).toBe(409);
     expect(await rejected(o,'cancel',{code:o.pickupCode,reason:'Paid cancellation must be blocked'})).toBe(409);
     if(index===0){const previous=runtime.pid;await stopRuntime();await startRuntime();expect(runtime.pid).not.toBe(previous);await page.reload({waitUntil:'commit'});await lookup(o);await expect(page.locator('#atendimento-resultado')).toContainText('Pagamento: Confirmado');}
-    const picked=page.waitForResponse(r=>r.url().endsWith('/pickup')&&r.request().method()==='POST');await page.getByRole('button',{name:'Confirmar entrega dos produtos',exact:true}).click();expect((await picked).status()).toBe(200);
-    await expect(page.locator('#atendimento-resultado')).toContainText('Situação: Retirado');
+    if(index===0)await expect(page.locator('#atendimento-resultado')).toContainText('Situação: Retirado');
     expect(await rejected(o,'pickup',{code:o.pickupCode})).toBe(409);
     if(index===0)for(const width of [320,375,390,430,768,1024,1440]){await page.setViewportSize({width,height:950});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:`evidence/live-neon/balcao-real-${width}.png`,fullPage:true});}
     console.log('Real counter browser: payment and pickup confirmed for '+method);

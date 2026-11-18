@@ -2,6 +2,7 @@ import { api } from './api.js';
 import { esc, moeda, avisar } from './utils.js';
 import { montarAtendimento } from './admin-atendimento.js';
 import { tabelaEquipe, tabelaPedidos, dataEquipe, statusPedido, caminhoLista, controlesLista } from './admin-funcionario.js';
+import {camposFotos,enviarFotos} from './admin-fotos.js';
 
 const money = value => moeda(Number(value || 0)/100);
 const button = (name,id,title) => `<button class="btn btn--pequeno btn--contorno" type="button" data-${name}="${esc(id)}">${title}</button>`;
@@ -11,6 +12,13 @@ const select = (name,title,options,value) => `<label>${title}<select class="entr
 const password = () => input('currentPassword','Sua senha atual','','type="password" autocomplete="current-password" required maxlength="128"');
 const numeric = value => Number.isFinite(Number(value)) ? Number(value) : 0;
 const cents = value => Math.round(numeric(value)*100);
+function cardsGestao(items,type) {
+  if(!items.length)return '<div class="painel"><div class="painel__corpo">Nenhum registro encontrado.</div></div>';
+  return `<div class="admin-card-grid">${items.map(item=>{
+    const product=type==='product';
+    return `<article class="admin-item-card"><div class="admin-item-card__top"><span class="admin-tag ${item.active?'admin-tag--active':''}">${item.active?'Ativo':'Inativo'}</span><span class="micro texto-2">${product?'Produto':'Categoria'}</span></div><h2>${esc(item.name)}</h2><p class="micro texto-2">${esc(product?item.sku:item.slug)}</p>${product?`<p class="admin-item-card__category">${esc(item.category?.name||'Sem categoria')}</p><dl class="admin-item-card__values"><div><dt>Preço</dt><dd>${money(item.priceCents)}</dd></div><div><dt>Estoque</dt><dd>${esc(item.stock)} un.</dd></div></dl>`:''}<div class="admin-item-card__actions">${button(`edit-${type}`,item.id,'Editar')}${item.active?button(`disable-${type}`,item.id,'Desativar'):''}</div></article>`;
+  }).join('')}</div>`;
+}
 function mount(root,html,actions='') {
   root.innerHTML=`<div data-feedback role="status" aria-live="polite"></div><div class="admin-actions">${actions}</div><div data-editor></div><div data-list>${html}</div>`;
 }
@@ -44,6 +52,7 @@ function confirmChange(root,title,handler,extra='') {
 function safeUrl(value) {
   const text=value.trim();
   if(!text)return '';
+  if(/^\/api\/media\/[0-9a-f]{64}$/.test(text))return text;
   if(text.startsWith('public/')) {
     const decoded=decodeURIComponent(text);
     if(!/^public\/[a-zA-Z0-9_./ -]+$/.test(decoded)||decoded.includes('..'))throw new Error('Use um caminho válido dentro de public/, sem subir pastas.');
@@ -82,11 +91,11 @@ export async function montarGestao(root,section,refresh) {
     }
     if(section==='produtos') {
       const [data,{categories}]=await Promise.all([api(caminhoLista('/admin/products','admin-products')),api('/admin/categories')]),{products}=data;
-      mount(root,tabelaEquipe(['Produto / SKU','Categoria','Preço','Estoque','Situação','Ações'],products.map(p=>[`${esc(p.name)}<br><span class="micro">${esc(p.sku)}</span>`,esc(p.category?.name||'Sem categoria'),money(p.priceCents),esc(p.stock),p.active?'Ativo':'Inativo',`<div class="tabela__acoes">${button('edit-product',p.id,'Editar')}${p.active?button('disable-product',p.id,'Desativar'):''}</div>`])),button('new-product','','Novo produto'));
+      mount(root,cardsGestao(products,'product'),button('new-product','','Novo produto'));
       controlesLista(root,'admin-products',products,data,refresh,{search:'Buscar por nome ou SKU'});
       const editProduct=p=>{
-        const form=editor(root,p.id?'Editar produto':'Novo produto',`${input('name','Nome',p.name,'required maxlength="200"')}${input('slug','Identificador da página',p.slug,'required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxlength="150"')}${input('sku','SKU',p.sku,'required maxlength="100"')}${input('price','Preço (R$)',p.priceCents===undefined?'':(p.priceCents/100).toFixed(2),'required type="number" min="0.01" max="1000000" step="0.01"')}${select('categoryId','Categoria',[['','Sem categoria'],...categories.map(c=>[c.id,c.name])],p.categoryId||'')}${!p.id?input('initialStock','Estoque inicial',0,'required type="number" min="0" step="1"'):''}${check('active','Produto ativo',p.active!==false)}<label class="admin-span">Descrição<textarea class="entrada" name="description" required maxlength="10000" rows="4">${esc(p.description||'')}</textarea></label><label class="admin-span">Fotos — uma URL ou caminho público por linha<textarea class="entrada" name="images" rows="3">${esc((p.images||[]).map(image=>image.imageUrl).join('\n'))}</textarea></label>${compatibilityRows(p.compatibilities)}${password()}`,async(data,form)=>{
-          const body={name:data.name.trim(),slug:data.slug.trim(),sku:data.sku.trim(),description:data.description.trim(),priceCents:cents(data.price),categoryId:data.categoryId||null,active:form.elements.active.checked,images:data.images.split('\n').map(safeUrl).filter(Boolean).map((imageUrl,position)=>({imageUrl,position})),compatibilities:readCompatibilities(form),currentPassword:data.currentPassword};
+        const form=editor(root,p.id?'Editar produto':'Novo produto',`${input('name','Nome',p.name,'required maxlength="200"')}${input('slug','Identificador da página',p.slug,'required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxlength="150"')}${input('sku','SKU',p.sku,'required maxlength="100"')}${input('price','Preço (R$)',p.priceCents===undefined?'':(p.priceCents/100).toFixed(2),'required type="number" min="0.01" max="1000000" step="0.01"')}${select('categoryId','Categoria',[['','Sem categoria'],...categories.map(c=>[c.id,c.name])],p.categoryId||'')}${!p.id?input('initialStock','Estoque inicial',0,'required type="number" min="0" step="1"'):''}${check('active','Produto ativo',p.active!==false)}<label class="admin-span">Descrição<textarea class="entrada" name="description" required maxlength="10000" rows="4">${esc(p.description||'')}</textarea></label>${camposFotos((p.images||[]).map(image=>image.imageUrl))}${compatibilityRows(p.compatibilities)}${password()}`,async(data,form)=>{
+          const photoUrls=await enviarFotos(form); const body={name:data.name.trim(),slug:data.slug.trim(),sku:data.sku.trim(),description:data.description.trim(),priceCents:cents(data.price),categoryId:data.categoryId||null,active:form.elements.active.checked,images:photoUrls.map(safeUrl).filter(Boolean).map((imageUrl,position)=>({imageUrl,position})),compatibilities:readCompatibilities(form),currentPassword:data.currentPassword};
           if(!p.id)body.initialStock=Number(data.initialStock);
           await save(`/admin/products${p.id?`/${encodeURIComponent(p.id)}`:''}`,p.id?'PATCH':'POST',body);
         });
@@ -102,15 +111,15 @@ export async function montarGestao(root,section,refresh) {
     }
     if(section==='categorias') {
       const {categories}=await api('/admin/categories');
-      mount(root,tabelaEquipe(['Nome','Identificador','Situação','Ações'],categories.map(c=>[esc(c.name),esc(c.slug),c.active?'Ativa':'Inativa',`${button('edit-category',c.id,'Editar')} ${c.active?button('disable-category',c.id,'Desativar'):''}`])),button('new-category','','Nova categoria'));
-      const editCategory=c=>editor(root,c.id?'Editar categoria':'Nova categoria',input('name','Nome',c.name,'required maxlength="100"')+input('slug','Identificador',c.slug,'required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxlength="100"')+check('active','Categoria ativa',c.active!==false)+password(),async(data,form)=>save(`/admin/categories${c.id?`/${encodeURIComponent(c.id)}`:''}`,c.id?'PATCH':'POST',{name:data.name.trim(),slug:data.slug.trim(),active:form.elements.active.checked,currentPassword:data.currentPassword}));
+      mount(root,cardsGestao(categories,'category'),button('new-category','','Nova categoria'));
+      const editCategory=c=>editor(root,c.id?'Editar categoria':'Nova categoria',input('name','Nome',c.name,'required maxlength="100"')+input('slug','Identificador',c.slug,'required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxlength="100"')+camposFotos(c.imageUrl?[c.imageUrl]:[],false)+check('active','Categoria ativa',c.active!==false)+password(),async(data,form)=>{const urls=await enviarFotos(form,false);return save(`/admin/categories${c.id?`/${encodeURIComponent(c.id)}`:''}`,c.id?'PATCH':'POST',{name:data.name.trim(),slug:data.slug.trim(),imageUrl:urls[0]||null,active:form.elements.active.checked,currentPassword:data.currentPassword});});
       root.querySelector('[data-new-category]').addEventListener('click',()=>editCategory({}));
       root.addEventListener('click',event=>{const edit=event.target.closest('[data-edit-category]'),disable=event.target.closest('[data-disable-category]');if(edit)editCategory(categories.find(c=>c.id===edit.dataset.editCategory));if(disable)confirmChange(root,'Desativar esta categoria?',data=>save(`/admin/categories/${encodeURIComponent(disable.dataset.disableCategory)}`,'DELETE',data));});return;
     }
     if(section==='estoque') {
       const data=await api(caminhoLista('/admin/stock','admin-stock')),{products,movements}=data;
-      mount(root,`<div data-stock-list>${tabelaEquipe(['Produto','SKU','Disponível','Ação'],products.map(p=>[esc(p.name),esc(p.sku),esc(p.stock),button('stock',p.id,'Ajustar estoque')]))}</div><h2>Últimas 100 movimentações</h2>${tabelaEquipe(['Data','Produto','Quantidade','Motivo','Responsável'],movements.map(m=>[dataEquipe(m.createdAt),esc(products.find(p=>p.id===m.entityId)?.name||m.entityId),esc(m.details?.delta),esc(m.details?.reason),esc(m.actor?.name||m.actorId||'Equipe')]))}`);
-      controlesLista(root.querySelector('[data-stock-list]'),'admin-stock',products,data,refresh);
+      mount(root,`<div data-stock-list>${tabelaEquipe(['Produto','Código / SKU','Preço','Disponível','Ação'],products.map(p=>[esc(p.name),esc(p.sku),money(p.priceCents),`<span class="admin-tag ${p.stock>5?'admin-tag--active':''}">${esc(p.stock)} un.</span>`,button('stock',p.id,'Ajustar estoque')]))}</div><h2>Últimas 50 movimentações</h2>${tabelaEquipe(['Data','Produto','Quantidade','Motivo','Responsável'],movements.map(m=>[dataEquipe(m.createdAt),esc(products.find(p=>p.id===m.entityId)?.name||m.entityId),esc(m.details?.delta),esc(m.details?.reason),esc(m.actor?.name||m.actorId||'Equipe')]))}`);
+      controlesLista(root.querySelector('[data-stock-list]'),'admin-stock',products,data,refresh,{search:'Buscar produto ou código'});
       root.addEventListener('click',event=>{const target=event.target.closest('[data-stock]');if(!target)return;const product=products.find(p=>p.id===target.dataset.stock);editor(root,`Ajustar estoque: ${product.name}`,`<p class="admin-span">Estoque atual: ${product.stock}. Use uma quantidade positiva para entrada ou negativa para saída.</p>${input('delta','Variação de unidades','','required type="number" min="-1000000" max="1000000" step="1"')}${input('reason','Motivo do ajuste','','required minlength="3" maxlength="300"')}${password()}`,async data=>{if(!Number.isInteger(Number(data.delta))||Number(data.delta)===0)throw new Error('Informe uma quantidade inteira diferente de zero.');await save(`/admin/stock/${encodeURIComponent(product.id)}`,'POST',{delta:Number(data.delta),reason:data.reason.trim(),currentPassword:data.currentPassword});});});return;
     }
     if(section==='pedidos'||section==='retiradas') {
@@ -159,9 +168,10 @@ export async function montarGestao(root,section,refresh) {
     }
     if(section==='configuracoes') {
       const {settings}=await api('/admin/settings');
-      mount(root,'<p class="texto-2">Dados públicos de contato da loja. Configurações de pagamento, entrega, banco e segurança são gerenciadas separadamente.</p>');
-      const form=editor(root,'Informações da loja',input('name','Nome da loja',settings.name,'maxlength="200"')+input('phone','Telefone',settings.phone,'type="tel" maxlength="100"')+input('email','E-mail público',settings.email,'type="email" maxlength="254"')+input('address','Rua e número',settings.address,'maxlength="500"')+input('neighborhood','Bairro',settings.neighborhood,'maxlength="100"')+input('city','Cidade',settings.city,'maxlength="100"')+input('state','Estado (UF)',settings.state,'maxlength="2" pattern="[A-Za-z]{2}"')+input('zipCode','CEP',settings.zipCode,'inputmode="numeric" pattern="[0-9]{5}-?[0-9]{3}" maxlength="9"')+input('openingHours','Horário de atendimento',settings.openingHours,'maxlength="500"')+password(),async data=>{
+      mount(root,'<section class="painel"><div class="painel__corpo"><h2>Formas de atendimento</h2><p>Retirada na loja ativa, com pagamento presencial e código de 5 dígitos.</p><label class="admin-check"><input type="checkbox" checked disabled> Retirada na loja ativa</label><label class="admin-check"><input type="checkbox" disabled aria-describedby="delivery-setting-notice"> Entrega em domicílio</label><p id="delivery-setting-notice" class="micro texto-2">Entrega desativada. A ativação ficará disponível após configurar as áreas atendidas, os valores e o processo de entrega. Nenhum frete é cobrado pelo site.</p></div></section><p class="texto-2">Dados públicos de contato da loja. Banco e segurança são gerenciados separadamente.</p>');
+      const form=editor(root,'Informações da loja',input('name','Nome da loja',settings.name,'maxlength="200"')+input('phone','Telefone',settings.phone,'type="tel" maxlength="100"')+input('email','E-mail público',settings.email,'type="email" maxlength="254"')+input('address','Rua e número',settings.address,'maxlength="500"')+input('neighborhood','Bairro',settings.neighborhood,'maxlength="100"')+input('city','Cidade',settings.city,'maxlength="100"')+input('state','Estado (UF)',settings.state,'maxlength="2" pattern="[A-Za-z]{2}"')+input('zipCode','CEP',settings.zipCode,'inputmode="numeric" pattern="[0-9]{5}-?[0-9]{3}" maxlength="9"')+input('openingHours','Horário de atendimento',settings.openingHours,'maxlength="500"')+check('addressConfirmed','Endereço definitivo confirmado para mostrar a rota',settings.addressConfirmed==='true')+password(),async(data,form)=>{
         const settings=Object.fromEntries(['name','phone','email','address','openingHours','city','neighborhood'].filter(key=>data[key].trim()||['phone','address','openingHours'].includes(key)).map(key=>[key,data[key].trim()]));
+        settings.addressConfirmed=form.elements.addressConfirmed.checked?'true':'false';
         if(data.state.trim())settings.state=data.state.trim().toUpperCase();
         if(data.zipCode.trim())settings.zipCode=data.zipCode.replace(/\D/g,'');
         await save('/admin/settings','PATCH',{settings,currentPassword:data.currentPassword});

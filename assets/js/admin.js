@@ -2,13 +2,13 @@ import { api } from './api.js';
 import { esc, icone } from './utils.js';
 
 const adminMenu = [
-  ['dashboard','Dashboard','painel'], ['produtos','Produtos','caixa'], ['categorias','Categorias','etiqueta'],
-  ['estoque','Estoque','grafico'], ['pedidos','Pedidos','sacola'], ['clientes','Clientes','usuarios'],
-  ['funcionarios','Funcionários','usuarios'], ['cupons','Cupons','etiqueta'], ['atendimento','Atendimento','loja'],
-  ['pagamentos','Pagamentos','carteira'], ['retiradas','Retiradas','caixa'], ['relatorios','Relatórios','grafico'],
+  ['atendimento','Atendimento','loja'], ['dashboard','Dashboard','painel'], ['pedidos','Pedidos','sacola'], ['retiradas','Retiradas','caixa'],
+  ['produtos','Produtos','caixa'], ['categorias','Categorias','etiqueta'], ['estoque','Estoque','grafico'], ['clientes','Clientes','usuarios'],
+  ['funcionarios','Funcionários','usuarios'], ['cupons','Cupons','etiqueta'],
+  ['pagamentos','Pagamentos','carteira'], ['relatorios','Relatórios','grafico'],
   ['configuracoes','Configurações','ajuste'],
 ];
-const staffMenu = [['pedidos','Pedidos','sacola'], ['atendimento','Atendimento','loja'], ['historico','Histórico','relogio']];
+const staffMenu = [['atendimento','Atendimento','loja'], ['pedidos','Pedidos','sacola'], ['historico','Histórico','relogio']];
 export const destinoPorPerfil = user => user?.role === 'ADMIN' ? 'painel.html' : user?.role === 'STAFF' ? 'funcionario.html' : null;
 
 export async function montarAdmin() { return montarPainel('ADMIN'); }

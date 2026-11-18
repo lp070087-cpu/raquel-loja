@@ -120,13 +120,13 @@ export async function montarCheckout() {
           </label>
 
           <label class="opcao-entrega">
-            <input type="radio" name="tipo" value="entrega">
+            <input type="radio" name="tipo" value="entrega" disabled aria-describedby="entrega-indisponivel">
             <span class="opcao-entrega__topo">
               ${icone('caminhao', 22)}
               <span class="opcao-entrega__nome">Receber em casa</span>
             </span>
-            <p>Entrega online ainda indisponível. Escolha retirada ou consulte a loja.</p>
-            <span class="selo selo--neutro mt-2">Transportadora ainda não integrada</span>
+            <p id="entrega-indisponivel">No momento, atendemos somente com retirada na loja.</p>
+            <span class="selo selo--neutro mt-2">Entrega desativada</span>
           </label>
         </div>
       </section>

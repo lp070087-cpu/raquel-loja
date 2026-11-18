@@ -30,7 +30,7 @@ export function carregarCatalogo() {
         if(Array.isArray(categories))CATEGORIAS.splice(0,CATEGORIAS.length,...categories.filter(c=>c.active!==false).map(c=>{
           const original=categoriasOriginais.find(item=>item.slug===c.slug);
           const produto=produtos.find(p=>p.categoryId===c.id||p.categoria===c.slug);
-          return {...original,id:c.id,slug:c.slug,nome:c.name,chamada:original?.chamada||c.name,grupo:original?.grupo||'outros',foto:original?.foto||produto?.foto||null};
+          return {...original,id:c.id,slug:c.slug,nome:c.name,chamada:original?.chamada||c.name,grupo:original?.grupo||'outros',foto:c.imageUrl||original?.foto||produto?.foto||null};
         }));
       } catch { /* Keep the existing visual catalog if category metadata is temporarily unavailable. */ }
       document.documentElement.dataset.catalogo = 'servidor';

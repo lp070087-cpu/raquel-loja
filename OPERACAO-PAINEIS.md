@@ -63,7 +63,7 @@ O módulo não define senhas dos funcionários, não promove ADMIN e não permit
 
 1. Cliente confirma o pedido no site, sem cobrança online, e recebe número do pedido e código de cinco dígitos. O pagamento permanece PENDING.
 2. A administradora pode confirmar preparação e marcar o pedido pronto para retirada, sem aprovar pagamento por essa mudança de status.
-3. O funcionário abre **Atendimento**, informa o código completo, incluindo zeros à esquerda, e também o identificador/número do pedido. Código isolado não identifica um atendimento válido.
+3. **Atendimento** é a primeira opção e a tela inicial para administradora e funcionário. Informe somente o código completo de cinco dígitos, incluindo zeros à esquerda. O servidor localiza o pedido reservado usando o HMAC único, sem expor o código armazenado. Confira visualmente o nome do cliente e os produtos antes de confirmar qualquer recebimento ou entrega. O número do pedido continua disponível para referência, mas não precisa ser digitado na busca.
 4. Confere os itens, quantidades, total e situação retornados pelo servidor.
 5. Somente após receber o pagamento, seleciona dinheiro, Pix presencial ou cartão na maquininha e confirma. O servidor usa o total persistido e registra método, valor, funcionário e horário. Dados de cartão não são armazenados.
 6. Após entregar os produtos, confirma a retirada. O servidor exige pagamento confirmado e impede uma segunda retirada. O cliente consulta o estado atualizado em Meus Pedidos.
@@ -194,3 +194,28 @@ Próxima ação: manter dados comerciais, SMTP, política de reembolso, provisio
 Criados: playwright.finish.config.mjs, tests/helpers/real-panels.mjs, tests/pending-master.spec.mjs, tests/admin-operations.spec.mjs e evidence/final-targeted/. Atualizados: FINALIZACAO-VALIDACAO.md, OPERACAO-PAINEIS.md e PROGRESSO-CODEX.md. Nenhuma migração criada. Verificação HTTP final: loja/API/catálogo 200, origem local autorizada com credenciais e ADMIN anônimo 401; evidence/final-targeted/local-runtime-result.json. Servidores mantidos em http://127.0.0.1:8000/ e http://127.0.0.1:3001/api/health. Quatro arquivos de automação passaram na verificação de sintaxe; git diff --check sem erros. backend/.env permanece fora dos arquivos versionados.
 
 Regressão direcionada após corrigir logins redundantes: somente busca/paginação/detalhe/snapshot repetido e APROVADO em 20,4 s (execução 38,3 s), um worker, com limpeza final das próprias permissões e sessões aprovada. Configurações encerrou com 1/1 aprovado (execução total 2,6 min, incluindo preparação e limpeza). A lista dos cinco casos permanece aprovada entre execuções, não uma suíte única sem interrupção.
+
+## Operação atual — 17/11/2026 (nova versão em prévia)
+
+Esta atualização substitui as instruções antigas de pagamento e entrega separados na interface. A produção continua na versão anteriormente publicada até a liberação da nova migração de fotos.
+
+1. No Atendimento, digite os cinco dígitos do código, incluindo zeros iniciais. A consulta é automática após uma breve pausa; o botão de consulta permanece disponível.
+2. Confira o nome do cliente, os produtos e o total calculado pelo servidor.
+3. Receba o pagamento presencial e selecione dinheiro, Pix presencial ou cartão na maquininha. Não digite dados de cartão.
+4. Marque a confirmação de que conferiu o cliente, recebeu o pagamento e está entregando os produtos.
+5. Clique em **Receber e entregar**. O servidor registra pagamento e retirada na mesma transação e o campo fica pronto para o próximo cliente.
+6. Se o pagamento já foi registrado anteriormente, a ação será **Concluir retirada**, sem gerar novo recebimento.
+
+Não clique antes do recebimento real e da entrega. Cancelamento de pedido pago continua bloqueado até definição de política de reembolso. Os endpoints antigos separados foram preservados para compatibilidade.
+
+### Fotos e estoque
+
+Produtos e categorias aceitam arquivos JPG. A interface otimiza a imagem sem deformar antes do envio; o servidor valida o formato e limita cada foto a 512 KB. As fotos existentes são preservadas. Estoque permite procurar nome ou código e mostra preço e saldo.
+
+### Catálogo copiado do Marquinho
+
+Consulta de origem estritamente somente leitura. Copiados 128 produtos para Raquel testing usando preço de venda e **estoque central**, sem somar a quantidade da loja. Os 23 produtos originais foram preservados. Seis produtos sem preço permanecem inativos; 120 não possuem foto na origem. Não foram inventadas imagens nem compatibilidades: aplicações sem confirmação aparecem como “Confirme a aplicação”. A repetição da importação não duplicou registros nem restaurou estoques consumidos.
+
+### Área do Cliente
+
+O código aparece diretamente no card do pedido enquanto estiver disponível. A indicação de como chegar só terá link de rota após confirmação expressa do endereço em Configurações. Até lá, mostra aviso de endereço demonstrativo. Benefícios apresentados são os recursos reais da conta; não existe promessa de cashback sem uma regra comercial definida.

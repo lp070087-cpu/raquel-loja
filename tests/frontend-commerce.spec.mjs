@@ -94,6 +94,10 @@ for (const width of [320,375,390,430,768,1024,1280,1440]) test(`carrinho e check
   for (const name of ['carrinho', 'checkout']) {
     await page.goto(`/${name}.html`);
     await expect(page.locator(name === 'carrinho' ? '.item-carrinho' : '#form-checkout')).toBeVisible();
+    if(name==='checkout'){
+      await expect(page.locator('[name="tipo"][value="entrega"]')).toBeDisabled();
+      await expect(page.locator('[name="tipo"][value="retirada"]')).toBeChecked();
+    }
     await page.evaluate(() => document.fonts.ready);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({ path: info.outputPath(`MOCKED-${name}-${width}.png`), fullPage: true });

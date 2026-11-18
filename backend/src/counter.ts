@@ -20,9 +20,13 @@ export function registerCounter(app:FastifyInstance,db:PrismaClient,auth:(r:any)
  }
  function checked(result:any){if(result.error)throw new ApiError(result.error,result.code,'Confira pedido, código e situação do atendimento.');return result;}
  app.post('/api/staff/orders/lookup',limited,async req=>{
-   await staff(req);const input=z.object({identifier:z.string().trim().min(1).max(100),code:codeInput}).strict().parse(req.body);
+   await staff(req);const input=z.object({identifier:z.string().trim().min(1).max(100).optional(),code:codeInput}).strict().parse(req.body);
    const result=await db.$transaction(async tx=>{
-     const r=await locked(tx,input.identifier,input.code);if(!r.order)return r;
+     // The reserved HMAC is unique across orders; never search by plaintext code.
+     const reservation=input.identifier?null:await tx.pickupCodeReservation.findUnique({where:{codeHash:pickupHash(input.code,secret)},select:{orderId:true}});
+     const identifier=input.identifier||reservation?.orderId;
+     if(!identifier)return {error:404,code:'NOT_FOUND'};
+     const r=await locked(tx,identifier,input.code);if(!r.order)return r;
      const o=await tx.order.findUniqueOrThrow({where:{id:r.order.id},include:{items:true,counterPayment:true,events:{orderBy:{createdAt:'asc'}},user:{select:{name:true,email:true}}}});
      const {pickupCodeHash,pickupCodeEncrypted,pickupAttempts,pickupLockedUntil,...safe}=o;
      return {order:safe};
@@ -39,6 +43,27 @@ export function registerCounter(app:FastifyInstance,db:PrismaClient,auth:(r:any)
      await tx.order.update({where:{id:o.id},data:{paymentStatus:'PAID',paymentMethod:input.method,status:o.status==='PENDING'?'CONFIRMED':o.status}});
      await tx.orderEvent.create({data:{orderId:o.id,actorId:s.userId,type:'COUNTER_PAYMENT',details:{method:input.method,amountCents:o.totalCents}}});
      return {payment};
+   },{timeout:15000});return checked(result);
+ });
+ app.post('/api/staff/orders/:id/complete',limited,async req=>{
+   const s=await staff(req);
+   const input=z.object({code:codeInput,method:z.enum(['CASH','PIX','CARD']).optional(),receivedAndDelivered:z.literal(true)}).strict().parse(req.body);
+   const id=z.string().min(1).max(100).parse((req.params as any).id);
+   const result=await db.$transaction(async tx=>{
+     const r=await locked(tx,id,input.code);if(!r.order)return r;const o=r.order;
+     if(o.fulfillmentType!=='PICKUP'||o.pickedUpAt||['CANCELLED','COMPLETED','SHIPPED'].includes(o.status))return {error:409,code:'ORDER_UNAVAILABLE'};
+     if(!['PENDING','PAID'].includes(o.paymentStatus))return {error:409,code:'PAYMENT_UNAVAILABLE'};
+     if(o.paymentStatus==='PENDING'&&!input.method)return {error:400,code:'PAYMENT_METHOD_REQUIRED'};
+     const now=new Date(),reserved=await tx.pickupCodeReservation.updateMany({where:{codeHash:o.pickupCodeHash,orderId:id,consumedAt:null},data:{consumedAt:now}});
+     if(reserved.count!==1)return {error:409,code:'PICKUP_UNAVAILABLE'};
+     const method=o.paymentStatus==='PAID'?o.paymentMethod:input.method!;
+     if(o.paymentStatus==='PENDING'){
+       await tx.counterPayment.create({data:{orderId:id,employeeId:s.userId,method,amountCents:o.totalCents}});
+       await tx.orderEvent.create({data:{orderId:id,actorId:s.userId,type:'COUNTER_PAYMENT',details:{method,amountCents:o.totalCents,combined:true}}});
+     }
+     await tx.order.update({where:{id},data:{paymentStatus:'PAID',paymentMethod:method,status:'COMPLETED',pickedUpAt:now,pickedUpById:s.userId,pickupAttempts:0,pickupLockedUntil:null}});
+     await tx.orderEvent.create({data:{orderId:id,actorId:s.userId,type:'PICKED_UP',details:{paymentStatus:'PAID',combined:true}}});
+     return {completed:{orderId:id,orderNumber:o.orderNumber,totalCents:o.totalCents,paymentMethod:method,pickedUpAt:now}};
    },{timeout:15000});return checked(result);
  });
  app.post('/api/staff/orders/:id/cancel',limited,async req=>{

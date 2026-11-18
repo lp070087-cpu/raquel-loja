@@ -1,5 +1,18 @@
 # Finalização e validação — Loja Raquel
 
+## Retomada comprovada — 17/11/2026, atendimento e Vercel
+
+- Neon testing: **11/11 integrações reais direcionadas** aprovadas, incluindo nova consulta somente pelo código para pedidos de clientes diferentes, permissões, pagamento CASH/PIX/CARD, transações concorrentes, cancelamento com estoque devolvido uma vez e persistência após recriar API/conexão. Nenhuma migração nesta etapa.
+- Navegador visível na prévia Vercel, um worker: fluxo completo em celular **1/1 PASS5min**; repetição maximizada no notebook **1/1 PASS4,6min**; duas rodadas adicionais maximizadas **2/2 PASS5,9min**, com produtos diferentes, quantidades2→3→2, remoção/reposição, favorito, busca, cupom inválido, recarga do carrinho, total do servidor, Pix e maquininha. Dinheiro coberto nas duas primeiras execuções. Pagamentos sintéticos somente em testing.
+- Navegação real na mesma prévia: **1/1 PASS1min**, cobrindo 13 módulos ADMIN, abertura/cancelamento de editores de produto/categoria, configurações de atendimento e seis links públicos existentes. É revisão de leitura/navegação, não uma nova execução de todos os CRUDs administrativos históricos.
+- Regressões UI com API simulada: **2/2 PASS19,7s**, menu/editores/cards nas sete larguras e carrinho/checkout390px. Backend build e 40 verificações de sintaxe aprovados.
+- Backend local:58 aprovados e3 falhas por conexão loopbackEACCES na execução restrita; repetição apenas do arquivo HTTP com acesso à rede local:5/5PASS. Todos os61 casos locais ficaram cobertos entre as execuções. As38 integrações são ignoradas nesse comando unitário; o resultado real atual é a suíte direcionada11/11 acima.
+- Correções de produto: Atendimento primeiro/padrão para ADMIN/STAFF, busca apenas por código com HMAC/reserva única e autorizações preservadas; entrega desabilitada no checkout e explicitamente indisponível em Configurações.
+- Correções da automação: remoção esperavaDELETE, enquanto o contrato é PUT quantity0; Contato esperava marcador de catálogo, mas carrega somente dados públicos da loja. Ambos corrigidos e cenários repetidos integralmente sem aumentar timeouts. Nenhuma falha de aplicação detectada nessas operações.
+- Evidências: `evidence/counter-real-result.json`; `evidence/deployment/cloud-desktop/{result,round-1-result,round-2-result}.json`; `evidence/deployment/cloud-navigation/result.json`. Screenshots reais nas duas últimas pastas; capturas da repetição desktop têm1366px, embora três nomes legados ainda contenham390.
+- Prévia: https://raquel-loja-ew91-qn001cphk-lp070087-5894s-projects.vercel.app . Publicação dos ajustes no domínio oficial em andamento; conferir checkpoint mais recente antes de afirmar READY. Nenhum push.
+- Permanecem pendentes: dados comerciais/fiscais, revisão de preços/estoques, provedor SMTP e política de reembolso. Entrega e venda avulsa de balcão não foram implementadas nesta revisão. Não equivale a garantia de ausência de todo erro possível do sistema.
+
 ## Retomada comprovada — 29/10/2026
 
 - Cenário pendente do mestre: **1/1 aprovado**, 49,2 s (execução total 1,3 min), Fastify compilado + Neon testing real, um worker. As etapas já aprovadas de gestão e compra não foram repetidas; pré-requisitos controlados foram criados por HTTP real, sem persistir credenciais.
@@ -127,3 +140,28 @@ Regressão direcionada após corrigir logins redundantes: somente busca/paginaç
 ## Atualização 14/11/2026
 
 Ver DIAGNOSTICO-2026-11-14.md para resultados atuais: 12 rotas, 7 seções da conta, pedido real e sete larguras aprovados entre execuções; 16 testes locais, 56 backend e TypeScript/build aprovados. Commit autorizado; deploy bloqueado por Vercel 403 e API hospedada ainda não configurada. Resultados antigos abaixo/acima permanecem históricos, sem nova aprovação implícita.
+
+## Retomada atual — 17/11/2026
+
+- Escolha confirmada pelo usuário: copiar somente o estoque central do Marquinho; não modificar a origem. Consulta realizada via GitHub/Neon em modo de leitura, sem copiar clientes, credenciais ou dados financeiros.
+- Importação em Raquel testing: 128 produtos conferidos por ID/SKU/hash, preço em centavos e estoque. Originais preservados. Repetição idempotente: zero produtos/imagens adicionais. Seis sem preço ficaram inativos, 120 sem foto e aplicações sem comprovação permanecem sinalizadas. Oito URLs de imagens públicas da origem responderam HTTP 200.
+- Migração aditiva 20261118010000_catalog_media aplicada somente em testing: Category.imageUrl e armazenamento de JPEG limitado. Histórico das seis migrações concluídas e checksum da nova migração conferidos. Não houve migração nem importação em produção nesta etapa.
+- Validações locais desta etapa: build TypeScript aprovado; 63 testes backend aprovados e 42 integrações reais ignoradas na execução local padrão. A suíte real completa ainda não foi revalidada devido a falhas intermitentes de conexão TCP/Prisma neste computador; não contar os 42 como aprovados.
+- Interface com API simulada: três cenários de acabamento da conta/admin/atendimento aprovados, incluindo sete larguras. Unitário de aplicações não confirmadas aprovado. Fluxo real combinado em prévia Vercel: um cenário aprovado com cadastro, pedido PENDING, código, atendimento, pagamento em dinheiro e entrega atômicos, atualização do cliente e bloqueio de duplicidade.
+- Prévia mais recente: https://raquel-loja-ew91-cayim5a42-lp070087-5894s-projects.vercel.app . A loja publicada permanece na versão anterior.
+- Cenário adicional real de JPG, catálogo, PIX/CARD, concorrência e código diretamente no card em execução. A primeira tentativa parou ao aguardar prontidão do painel durante a navegação; a automação foi corrigida para aguardar a resposta de login e a navegação separadamente, mantendo os limites de 30 segundos. Resultado final ainda pendente, sem alegar aprovação.
+- Janela atual: um navegador maximizado, um worker. Memória disponível medida por Node: aproximadamente 478 MB de 3.885 MB. Nenhum programa pessoal encerrado.
+- Procedimento externo de concessão temporária das próprias contas controladas usa até 180 segundos para comunicação com o conector; não houve aumento dos limites HTTP, SQL ou de ações do navegador. Os privilégios são retirados após cada tentativa, preservando registros e auditoria.
+- Sem promessa de cashback. Endereço ainda demonstrativo; link de rota só após confirmação comercial explícita. SMTP, dados comerciais, política de reembolso e fotos/preços faltantes permanecem pendências reais.
+
+### Resultado final desta rodada — 17/11/2026, 22h27
+
+- **Cenário adicional real APROVADO: 1/1, 3,8 min de cenário e 5,1 min de execução**, Playwright com um worker e navegador visível maximizado, Fastify/Vercel e Neon testing reais. Evidência estruturada: evidence/cloud-finish/result.json.
+- JPG em produto e categoria gravado e recuperado após recarregar; imagem HTTP 200, content-type image/jpeg. Busca de estoque com preço conferida. Catálogo público retornou 122 importados ativos com aplicação pendente explícita.
+- Dinheiro, Pix e cartão presencial: pedidos concluídos e pagamento PAID. Concorrência de duas confirmações do mesmo pedido: HTTP 200 e 409. Cliente impedido de confirmar atendimento; funcionário impedido de upload administrativo. Repetições de retirada bloqueadas. Pedido já pago concluído sem novo recebimento.
+- Código do pedido pendente visível diretamente em Meus Pedidos; código consumido ausente nos pedidos concluídos. Como chegar mostra aviso demonstrativo sem rota inventada. Sem erros de script e sem caixas nativas de confirmação no cenário.
+- Tempos observados nessa confirmação: configurações 947 ms, pedido 1.262 ms e perfil 787 ms. Pedido e perfil consultados em paralelo; esses três valores são amostras, não benchmark nem garantia de desempenho.
+- A correção foi na sincronização da automação: aguardar resposta HTTP do login, navegação e prontidão do painel em etapas distintas. Nenhum timeout HTTP/ação foi aumentado. O build foi repetido com sucesso e o unitário de compatibilidade passou novamente; git diff --check sem erros de conteúdo.
+- Limpeza efetiva no banco testing confirmada: dois papéis temporários removidos e duas sessões restantes revogadas, auditoria preservada. As tentativas anteriores também tiveram suas próprias permissões removidas.
+- Capturas novas: evidence/cloud-finish/category-jpg-desktop.png, customer-code-visible-desktop.png e pickup-directions-provisional.png. Capturas do acabamento responsivo: evidence/account-finish/account-390.png e account-1440.png (API simulada, não confundir com o cenário real).
+- Pendências mantidas: reexecução integral das 42 integrações via Prisma local bloqueada por conexão TCP intermitente; não foram aprovadas nesta rodada. Migração nova de fotos, importação e nova publicação em produção ainda não executadas. Dados comerciais, SMTP, seis preços, 120 fotos e confirmação das aplicações dependem de dados reais. Nenhuma alteração no projeto Marquinho, nenhum push ou deploy de produção nesta missão.

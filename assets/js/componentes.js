@@ -21,7 +21,9 @@ export function cardProduto(p, opcoes = {}) {
 
   /* Compatibilidade em UMA linha, discreta — informação técnica, não alarme. */
   let compat;
-  if (universal) {
+  if (p.compatibilidadePendente) {
+    compat = `<span class="compat compat--outra">${icone('moto',13)} Confirme a aplicação</span>`;
+  } else if (universal) {
     compat = `<span class="compat compat--universal">${icone('check', 13)} Produto universal</span>`;
   } else if (serve) {
     compat = `<span class="compat compat--serve">${icone('check', 13)} Serve na sua moto</span>`;

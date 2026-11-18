@@ -24,12 +24,35 @@ describe.skipIf(process.env.RUN_DATABASE_INTEGRATION!=='true')('Real counter pay
  },120000);
  afterAll(async()=>{if(users.length){await db.order.deleteMany({where:{userId:{in:users}}});await db.user.deleteMany({where:{id:{in:users}}});}await db.product.deleteMany({where:{id:{in:[prefix]}}});await app?.close();await db.$disconnect();},120000);
  it('accepts checkout without advance payment or chosen method',async()=>{const o=await order();expect(o.paymentStatus).toBe('PENDING');expect(o.paymentMethod).toBe('ON_PICKUP');expect(o.pickupCode).toMatch(/^\d{5}$/);expect(o.status).toBe('PENDING');expect(await db.orderEvent.count({where:{orderId:o.id,type:'CREATED_STOCK_RESERVED'}})).toBe(1);});
+ it('finds the exact customer order with only its five-digit code, restricted to staff',async()=>{
+   const first=await order(),second=await order(b);
+   for(const o of [first,second]){
+     const response=await staff.req('POST','/staff/orders/lookup',{code:o.pickupCode});
+     expect(response.statusCode).toBe(200);expect(response.json().order.id).toBe(o.id);
+     expect(response.json().order.user.email).toBeDefined();
+     expect(response.json().order).not.toHaveProperty('pickupCodeEncrypted');
+     expect(response.json().order).not.toHaveProperty('pickupCodeHash');
+   }
+   expect((await a.req('POST','/staff/orders/lookup',{code:first.pickupCode})).statusCode).toBe(403);
+   expect((await staff.req('POST','/staff/orders/lookup',{identifier:second.id,code:first.pickupCode})).statusCode).toBe(422);
+   expect((await staff.req('POST','/staff/orders/lookup',{code:'1234'})).statusCode).toBe(400);
+ });
  for(const method of ['CASH','PIX','CARD'])it(`records ${method} at the counter and prevents duplicate payment`,async()=>{
    const o=await order();const lookup=await staff.req('POST','/staff/orders/lookup',{identifier:o.orderNumber,code:o.pickupCode});expect(lookup.statusCode).toBe(200);expect(lookup.json().order.totalCents).toBe(3210);expect(lookup.json().order).not.toHaveProperty('pickupCodeHash');
    const responses=await Promise.all([1,2].map(()=>staff.req('POST',`/staff/orders/${o.id}/payment`,{code:o.pickupCode,method})));
    expect(responses.map(r=>r.statusCode).sort()).toEqual([200,409]);
    const payment=await db.counterPayment.findUniqueOrThrow({where:{orderId:o.id}});expect(payment.amountCents).toBe(3210);expect(payment.method).toBe(method);expect(payment.employeeId).toBe(staff.id);expect(payment.createdAt).toBeInstanceOf(Date);
    expect(await db.orderEvent.count({where:{orderId:o.id,type:'COUNTER_PAYMENT'}})).toBe(1);
+ });
+ for(const method of ['CASH','PIX','CARD'])it(`atomically receives and delivers ${method}, rejecting concurrent completion`,async()=>{
+   const o=await order(),path=`/staff/orders/${o.id}/complete`;
+   expect((await a.req('POST',path,{code:o.pickupCode,method,receivedAndDelivered:true})).statusCode).toBe(403);
+   expect((await staff.req('POST',path,{code:o.pickupCode,method})).statusCode).toBe(400);
+   const responses=await Promise.all([1,2].map(()=>staff.req('POST',path,{code:o.pickupCode,method,receivedAndDelivered:true})));
+   expect(responses.map(r=>r.statusCode).sort()).toEqual([200,409]);
+   const saved=await db.order.findUniqueOrThrow({where:{id:o.id}});expect(saved.status).toBe('COMPLETED');expect(saved.paymentStatus).toBe('PAID');expect(saved.pickedUpById).toBe(staff.id);
+   expect(await db.counterPayment.count({where:{orderId:o.id}})).toBe(1);expect(await db.orderEvent.count({where:{orderId:o.id,type:'PICKED_UP'}})).toBe(1);
+   expect((await a.req('GET','/orders/'+o.id)).json().order.pickupCode).toBeNull();
  });
  it('blocks unpaid pickup, confirms separate delivery and never returns withdrawn stock',async()=>{
    const o=await order();const path=`/staff/orders/${o.id}`;

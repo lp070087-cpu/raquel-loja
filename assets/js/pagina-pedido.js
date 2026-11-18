@@ -14,6 +14,7 @@ import { moeda, esc, icone, $, avisar, dataHora, prepararRevelar } from './utils
 import { nomeStatus, corStatus } from './carrinho.js';
 import { api } from './api.js';
 import { linhaProduto, estadoVazio } from './componentes.js';
+import {localRetirada} from './retirada-local.js';
 
 export async function montarPedido() {
   const alvo = document.getElementById('pedido-container');
@@ -25,10 +26,10 @@ export async function montarPedido() {
   let pedido;
   try {
     if (!id) throw new Error('Selecione um pedido em Minha Conta.');
-    const resultado = await api('/orders/' + encodeURIComponent(id));
+    const [resultado,perfilResult] = await Promise.all([api('/orders/' + encodeURIComponent(id)),api('/profile')]);
     const remoto = resultado.order || resultado;
     const endereco = remoto.addressSnapshot || {};
-    const perfil = (await api('/profile')).user;
+    const perfil = perfilResult.user;
     pedido = {
       id: remoto.orderNumber, criadoEm: remoto.createdAt,
       tipo: remoto.fulfillmentType === 'PICKUP' ? 'retirada' : 'entrega',
@@ -96,6 +97,7 @@ export async function montarPedido() {
       </div>
     </div>
 
+    ${localRetirada()}
     <div class="mensagem mensagem--alerta mb-3">
       ${icone('info', 18)}
       <span>${pedido.pago ? 'Pagamento confirmado. Apresente o código para retirar seu pedido.' : 'Código protegido pelo servidor. A retirada exige pagamento confirmado pela loja.'}</span>

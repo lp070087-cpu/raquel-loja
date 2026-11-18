@@ -1,5 +1,6 @@
 import { test, expect } from '../backend/node_modules/@playwright/test/index.mjs';
 import { CATEGORIAS } from '../assets/js/dados.js';
+import {mkdir} from 'node:fs/promises';
 
 // These are browser integration tests with an explicitly mocked HTTP API.
 // They verify UI behavior, not Neon connectivity or backend authorization.
@@ -48,6 +49,16 @@ async function mockApi(page, authenticated = false) {
   });
   return state;
 }
+
+test('acabamento da conta: menu compacto e código visível sem abrir detalhes — API simulada',async({page})=>{
+ const state=await mockApi(page,true);
+ state.orders=[{id:'o-visible',orderNumber:'RQ-TESTE-001',createdAt:'2026-11-17T12:00:00Z',status:'PENDING',paymentStatus:'PENDING',paymentMethod:'ON_PICKUP',fulfillmentType:'PICKUP',pickupCode:'00123',totalCents:5000,items:[{nameSnapshot:'Produto controlado',quantity:2,unitPriceCents:2500,totalCents:5000}]}];
+ await page.goto('/conta.html');await expect(page.locator('.conta-nav__identity')).toContainText('Raquel Teste');await expect(page.locator('.conta-pickup strong')).toHaveText('00123');
+ expect(state.calls.filter(c=>c.path==='/orders/o-visible')).toHaveLength(0);
+ await mkdir('evidence/account-finish',{recursive:true});
+ for(const width of [320,375,390,430,768,1024,1440]){await page.setViewportSize({width,height:950});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);if([390,1440].includes(width))await page.screenshot({path:`evidence/account-finish/account-${width}.png`});}
+ await page.locator('.conta-nav [data-section="orders"]').click();await expect(page.locator('.conta-pickup strong')).toHaveText('00123');
+});
 
 test('cadastro e perfil — API simulada', async ({page},testInfo) => {
   const state=await mockApi(page);

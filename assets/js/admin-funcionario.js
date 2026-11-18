@@ -32,13 +32,13 @@ export const statusPedido = status => ({PENDING:'Aguardando atendimento',CONFIRM
 export const dataEquipe = value => value ? new Date(value).toLocaleString('pt-BR') : '—';
 export function tabelaEquipe(headers,rows) {
   if(!rows.length) return '<div class="painel"><div class="painel__corpo"><p>Nenhum registro encontrado.</p></div></div>';
-  return `<div class="tabela-wrap"><table class="tabela"><thead><tr>${headers.map(h=>`<th scope="col">${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr>${row.map(cell=>`<td>${cell}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  return `<div class="tabela-wrap"><table class="tabela"><thead><tr>${headers.map(h=>`<th scope="col">${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr>${row.map((cell,index)=>`<td data-label="${esc(headers[index])}">${cell}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
 export function tabelaPedidos(orders,actions=false) {
-  return tabelaEquipe(['Pedido','Cliente','Data','Total','Situação','Pagamento',...(actions?['Ações']:[])],orders.map(order=>[
+  return `<div class="admin-orders-list">${tabelaEquipe(['Pedido','Cliente','Data','Total','Situação','Pagamento',...(actions?['Ações']:[])],orders.map(order=>[
     esc(order.orderNumber),esc(order.user?.name || order.customerName || 'Cliente'),dataEquipe(order.createdAt),moeda(order.totalCents/100),esc(statusPedido(order.status)),order.paymentStatus==='PAID'?'Recebido':'Pendente',
     ...(actions?[`<button class="btn btn--pequeno btn--contorno" type="button" data-order="${esc(order.id)}">Ver detalhes</button>`]:[]),
-  ]));
+  ]))}</div>`;
 }
 export function tabelaHistorico(events) {
   const actions={PAYMENT:'Pagamento recebido',PICKUP:'Produtos entregues',CANCEL:'Pedido cancelado',COUNTER_PAYMENT:'Pagamento recebido',ORDER_CANCELLED:'Pedido cancelado',ORDER_PICKED_UP:'Produtos entregues',PICKED_UP:'Produtos entregues',CANCELLED_STOCK_RETURNED:'Cancelado e estoque devolvido',PREPARATION_STATUS:'Etapa de preparação atualizada'};

@@ -721,6 +721,7 @@ export function fotosDoProduto(p) {
 }
 
 export function ehUniversal(produto) {
+  if(produto?.compatibilidadePendente)return false;
   return !produto || !produto.compat || produto.compat.length === 0;
 }
 
@@ -737,6 +738,7 @@ export function rotuloMoto(moto) {
 */
 export function produtoServeEm(produto, moto) {
   if (!produto) return false;
+  if(produto.compatibilidadePendente)return false;
   if (ehUniversal(produto)) return true;
   if (!moto || !moto.marca || !moto.modelo) return false;
 

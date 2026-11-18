@@ -143,7 +143,7 @@ export function montarProduto() {
       <li><span class="rot">Categoria</span><span class="val">${esc(nomeCategoria(produto.categoria))}</span></li>
       <li><span class="rot">Marca</span><span class="val">${esc(produto.marca)}</span></li>
       ${especificacoes.map((k) => `<li><span class="rot">${esc(k)}</span><span class="val">${esc(produto.especificacoes[k])}</span></li>`).join('')}
-      <li><span class="rot">Compatibilidade</span><span class="val">${universal ? 'Universal' : `${apps.length} aplicações`}</span></li>
+      <li><span class="rot">Compatibilidade</span><span class="val">${produto.compatibilidadePendente?'Confirme a aplicação':universal ? 'Universal' : `${apps.length} aplicações`}</span></li>
     </ul>
   </div>
 </article>
@@ -170,7 +170,9 @@ export function montarProduto() {
 <div class="painel-aba" data-painel="compat" hidden>
   <h3>Motos compatíveis</h3>
   ${
-    universal
+    produto.compatibilidadePendente
+      ? `<p class="texto-2 mt-2">A aplicação desta peça ainda precisa ser confirmada com a loja. Não há compatibilidade técnica validada para este produto.</p>`
+      : universal
       ? `<p class="texto-2 mt-2">Este é um <strong>produto universal</strong>: não depende do modelo da moto, serve em qualquer uma.</p>`
       : `<p class="texto-2 mt-2 mb-3">${apps.length} aplicações confirmadas. Confira a versão e a faixa de anos:</p>
          <table class="tabela-compat">

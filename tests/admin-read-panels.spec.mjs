@@ -70,9 +70,10 @@ test('13 módulos ADMIN carregam dados reais e terminam o estado de carregamento
    for(const label of ['Nome da loja','Telefone','E-mail público','Rua e número','Bairro','Cidade','Estado (UF)','CEP','Horário de atendimento'])await expect(content.getByLabel(label,{exact:true})).toBeVisible();
   }else if(name==='atendimento'){
    await expect(content.getByRole('heading',{name:'Atendimento de retirada',exact:true})).toBeVisible();
-   await expect(content.getByLabel('Número ou identificação do pedido',{exact:true})).toBeVisible();
    await expect(content.getByLabel('Código de retirada',{exact:true})).toBeVisible();
    await expect(content.getByRole('button',{name:'Consultar pedido',exact:true})).toBeEnabled();
+  }else if(name==='produtos'||name==='categorias'){
+   await expect.poll(async()=>await content.locator('.admin-item-card').count()>0||await content.getByText('Nenhum registro encontrado.',{exact:true}).count()>0,{message:name+' rendered cards or legitimate empty state'}).toBe(true);
   }else{
    await expect.poll(async()=>await content.locator('table tbody tr').count()>0||await content.getByText('Nenhum registro encontrado.',{exact:true}).count()>0,{message:name+' rendered table or legitimate empty state'}).toBe(true);
   }

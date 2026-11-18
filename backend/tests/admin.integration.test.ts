@@ -7,6 +7,7 @@ import { token } from '../src/domain.js';
 import { assertTestingBranch } from '../src/test-database.js';
 import { assertRealNeonIsolation } from '../src/neon-isolation.js';
 import { boundedDatabaseUrl } from '../src/database.js';
+import {readFileSync} from 'node:fs';
 describe.skipIf(process.env.RUN_DATABASE_INTEGRATION !== 'true')('Real ADMIN management and STAFF isolation', () => {
     const db = new PrismaClient({ datasourceUrl: boundedDatabaseUrl(process.env.TEST_DATABASE_URL || 'postgresql://localhost/unused') });
     const prefix = ('admin-test-' + Date.now() + '-' + token().replace(/[^a-z0-9]/gi, '').slice(0, 4)).toLowerCase();
@@ -232,6 +233,22 @@ describe.skipIf(process.env.RUN_DATABASE_INTEGRATION !== 'true')('Real ADMIN man
         expect((await admin.request('PATCH', '/admin/employees/' + customer.id, {
             role: 'ADMIN', currentPassword: password
         })).statusCode).toBe(400);
+    });
+    it('uploads a bounded JPEG for ADMIN only and persists category image without catalog binary payloads',async()=>{
+        const jpeg=readFileSync(new URL('../../public/produtos/pneus/pneu-01.jpg',import.meta.url));
+        const marker=Buffer.from(prefix),segment=Buffer.alloc(4);segment[0]=255;segment[1]=254;segment.writeUInt16BE(marker.length+2,2);
+        const content=Buffer.concat([jpeg.subarray(0,2),segment,marker,jpeg.subarray(2)]),payload={base64:content.toString('base64')};
+        for(const c of [staff,customer])expect((await c.request('POST','/admin/media',payload)).statusCode).toBe(403);
+        expect((await admin.request('POST','/admin/media',{base64:Buffer.from('<svg/>').toString('base64')})).statusCode).toBe(400);
+        const uploaded=await admin.request('POST','/admin/media',payload);expect(uploaded.statusCode).toBe(201);
+        const imageUrl=uploaded.json().imageUrl;expect(imageUrl).toMatch(/^\/api\/media\/[0-9a-f]{64}$/);
+        try{
+            const fetched=await app.inject({url:imageUrl});expect(fetched.statusCode).toBe(200);expect(fetched.rawPayload.equals(content)).toBe(true);expect(fetched.headers['content-type']).toContain('image/jpeg');expect(fetched.headers['x-content-type-options']).toBe('nosniff');
+            expect((await admin.request('PATCH','/admin/categories/'+createdCategory.id,{imageUrl,currentPassword:password})).statusCode).toBe(200);
+            const publicData=(await customer.request('GET','/categories')).json();expect(publicData.categories.find((c:any)=>c.id===createdCategory.id).imageUrl).toBe(imageUrl);
+            expect(JSON.stringify(publicData)).not.toContain(payload.base64);
+            expect((await admin.request('GET','/admin/stock?q='+encodeURIComponent(createdProduct.sku))).json().products.every((p:any)=>p.sku===createdProduct.sku)).toBe(true);
+        }finally{await db.category.update({where:{id:createdCategory.id},data:{imageUrl:null}});await db.mediaAsset.delete({where:{id:imageUrl.split('/').at(-1)}});}
     });
     it('soft-disables referenced products and categories without destroying order snapshots', async () => {
         expect((await admin.request('DELETE', '/admin/products/' + createdProduct.id, { currentPassword: password })).statusCode).toBe(200);

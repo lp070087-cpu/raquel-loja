@@ -3,12 +3,14 @@ import type { PrismaClient, Prisma } from '@prisma/client';
 import argon2 from 'argon2';
 import { z } from 'zod';
 import { ApiError, publicProduct, publicUser, token } from './domain.js';
+import {jpegUpload} from './media.js';
 const text = z.string().trim().min(1).max(200);
 const currentPassword = z.string().min(1).max(128);
 const secureBody = z.object({ currentPassword }).strict();
 const slug = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(100);
 const imageUrl = z.string().max(1000).refine(s => {
     try {
+        if(/^\/api\/media\/[0-9a-f]{64}$/.test(s))return true;
         if (s.startsWith('public/')) {
             const decoded = decodeURIComponent(s);
             return /^public\/[a-zA-Z0-9_./ -]+$/.test(decoded) && !decoded.includes('..');
@@ -66,10 +68,10 @@ export function registerAdmin(app: FastifyInstance, db: PrismaClient, auth: (req
     function transaction<T>(run:(tx:Prisma.TransactionClient)=>Promise<T>):Promise<T>{return db.$transaction(run,{timeout:15000,maxWait:10000});}
     app.get('/api/categories', async () => ({ categories: await db.category.findMany({
             where: { active: true }, select: {
-                id: true, name: true, slug: true, active: true
+                id: true, name: true, slug: true, active: true, imageUrl:true
             }, orderBy: { name: 'asc' }
         }) }));
-    app.get('/api/store', async () => ({ settings: Object.fromEntries((await db.storeSetting.findMany({ where: { key: { in: ['name', 'phone', 'email', 'address', 'openingHours', 'city', 'state', 'zipCode', 'neighborhood'] } } })).map(s => [s.key, s.value])) }));
+    app.get('/api/store', async () => ({ settings: Object.fromEntries((await db.storeSetting.findMany({ where: { key: { in: ['name', 'phone', 'email', 'address', 'openingHours', 'city', 'state', 'zipCode', 'neighborhood', 'addressConfirmed'] } } })).map(s => [s.key, s.value])) }));
     async function admin(req: any) {
         const session = await auth(req);
         if (session.user.role !== 'ADMIN')
@@ -88,6 +90,16 @@ export function registerAdmin(app: FastifyInstance, db: PrismaClient, auth: (req
             throw new ApiError(401, 'PASSWORD_REQUIRED', 'Confirme sua senha atual para continuar.');
         return session;
     }
+    app.post('/api/admin/media',{bodyLimit:750000,config:{rateLimit:{max:30,timeWindow:'1 hour'}}},async(req,reply)=>{
+        const s=await admin(req),input=z.object({base64:z.string().min(4).max(700000)}).strict().parse(req.body),asset=jpegUpload(input.base64);
+        await transaction(async tx=>{await tx.mediaAsset.upsert({where:{id:asset.id},create:asset,update:{}});await audit(tx,s.userId,'CATALOG_IMAGE_UPLOADED','MediaAsset',asset.id,{bytes:asset.content.length});});
+        return reply.code(201).send({imageUrl:'/api/media/'+asset.id});
+    });
+    app.get('/api/media/:id',async(req,reply)=>{
+        const assetId=z.string().regex(/^[0-9a-f]{64}$/).parse((req.params as any).id);
+        const asset=await db.mediaAsset.findUnique({where:{id:assetId},select:{content:true}});if(!asset)throw new ApiError(404,'NOT_FOUND','Imagem não encontrada.');
+        return reply.header('Cache-Control','public, max-age=31536000, immutable').header('X-Content-Type-Options','nosniff').header('Content-Security-Policy',"default-src 'none'; sandbox").type('image/jpeg').send(Buffer.from(asset.content));
+    });
     async function categoryActive(tx: Prisma.TransactionClient, categoryId: string | null | undefined) {
         if (categoryId && !await tx.category.findFirst({ where: {
                 id: categoryId, active: true
@@ -180,7 +192,7 @@ export function registerAdmin(app: FastifyInstance, db: PrismaClient, auth: (req
                 await tx.productCompatibility.deleteMany({ where: { productId: old.id } });
             const category = data.categoryId ? await tx.category.findUnique({ where: { id: data.categoryId } }) : null;
             const metadata = {
-                ...(old.metadata as any), ...(data.categoryId !== undefined ? { categoria: category?.slug || '' } : {})
+                ...(old.metadata as any), ...(data.categoryId !== undefined ? { categoria: category?.slug || '' } : {}), ...(compatibilities?.length?{compatibilidadePendente:false}:{})
             };
             const p = await tx.product.update({
                 where: { id: old.id }, data: {
@@ -219,7 +231,7 @@ export function registerAdmin(app: FastifyInstance, db: PrismaClient, auth: (req
     app.post('/api/admin/categories', limited, async (req, reply) => {
         await admin(req);
         const data = z.object({
-            name: text, slug, active: z.boolean().optional(), currentPassword
+            name: text, slug, active: z.boolean().optional(), imageUrl:imageUrl.nullable().optional(), currentPassword
         }).strict().parse(req.body);
         const s = await sensitive(req, data.currentPassword);
         const { currentPassword: _, ...values } = data;
@@ -235,7 +247,7 @@ export function registerAdmin(app: FastifyInstance, db: PrismaClient, auth: (req
     app.patch('/api/admin/categories/:id', limited, async (req) => {
         await admin(req);
         const data = z.object({
-            name: text.optional(), slug: slug.optional(), active: z.boolean().optional(), currentPassword
+            name: text.optional(), slug: slug.optional(), active: z.boolean().optional(), imageUrl:imageUrl.nullable().optional(), currentPassword
         }).strict().parse(req.body);
         const s = await sensitive(req, data.currentPassword);
         const { currentPassword: _, ...values } = data;
@@ -277,10 +289,13 @@ export function registerAdmin(app: FastifyInstance, db: PrismaClient, auth: (req
     app.get('/api/admin/stock', async (req) => {
         await admin(req);
         const p = pagination(req.query);
+        const where=p.q?{OR:[{name:{contains:p.q,mode:'insensitive' as const}},{sku:{contains:p.q,mode:'insensitive' as const}}]}:{};
         return {
+            total:await db.product.count({where}),
             products: await db.product.findMany({
+                where,
                 select: {
-                    id: true, name: true, sku: true, stock: true, active: true
+                    id: true, name: true, sku: true, priceCents:true, stock: true, active: true
                 }, orderBy: { stock: 'asc' }, take: p.take, skip: p.skip
             }), movements: await db.adminAudit.findMany({
                 where: { action: 'STOCK_ADJUSTED' }, orderBy: { createdAt: 'desc' }, take: 50, include: { actor: { select: {
@@ -557,13 +572,13 @@ export function registerAdmin(app: FastifyInstance, db: PrismaClient, auth: (req
     });
     app.get('/api/admin/settings', async (req) => {
         await admin(req);
-        return { settings: Object.fromEntries((await db.storeSetting.findMany({ where: { key: { in: ['name', 'phone', 'email', 'address', 'openingHours', 'city', 'state', 'zipCode', 'neighborhood'] } } })).map(s => [s.key, s.value])) };
+        return { settings: Object.fromEntries((await db.storeSetting.findMany({ where: { key: { in: ['name', 'phone', 'email', 'address', 'openingHours', 'city', 'state', 'zipCode', 'neighborhood', 'addressConfirmed'] } } })).map(s => [s.key, s.value])) };
     });
     app.patch('/api/admin/settings', limited, async (req) => {
         await admin(req);
         const data = z.object({
             settings: z.object({
-                name: text.optional(), phone: z.string().max(30).optional(), email: z.email().optional(), address: z.string().trim().max(500).optional(), openingHours: z.string().trim().max(500).optional(), city: text.optional(), state: z.string().regex(/^[A-Z]{2}$/).optional(), zipCode: z.string().regex(/^\d{5}-?\d{3}$/).optional(), neighborhood: text.optional()
+                name: text.optional(), phone: z.string().max(30).optional(), email: z.email().optional(), address: z.string().trim().max(500).optional(), openingHours: z.string().trim().max(500).optional(), city: text.optional(), state: z.string().regex(/^[A-Z]{2}$/).optional(), zipCode: z.string().regex(/^\d{5}-?\d{3}$/).optional(), neighborhood: text.optional(), addressConfirmed:z.enum(['true','false']).optional()
             }).strict(), currentPassword
         }).strict().parse(req.body);
         const s = await sensitive(req, data.currentPassword);
@@ -577,7 +592,7 @@ export function registerAdmin(app: FastifyInstance, db: PrismaClient, auth: (req
                     });
             await audit(tx, s.userId, 'STORE_SETTINGS_UPDATED', 'StoreSetting', 'store', { keys: Object.keys(data.settings) });
         });
-        return { settings: Object.fromEntries((await db.storeSetting.findMany({ where: { key: { in: ['name', 'phone', 'email', 'address', 'openingHours', 'city', 'state', 'zipCode', 'neighborhood'] } } })).map(s => [s.key, s.value])) };
+        return { settings: Object.fromEntries((await db.storeSetting.findMany({ where: { key: { in: ['name', 'phone', 'email', 'address', 'openingHours', 'city', 'state', 'zipCode', 'neighborhood', 'addressConfirmed'] } } })).map(s => [s.key, s.value])) };
     });
     app.get('/api/admin/audit', async (req) => {
         await admin(req);
