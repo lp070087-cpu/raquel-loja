@@ -1,6 +1,7 @@
 import { api } from './api.js';
 import { esc, moeda } from './utils.js';
 import { montarAtendimento } from './admin-atendimento.js';
+import {carregamentoPainel} from './admin-carregamento.js';
 
 const listStates = new Map();
 export function estadoLista(key) {
@@ -47,7 +48,7 @@ export function tabelaHistorico(events) {
   ]));
 }
 export async function montarFuncionario(root,section) {
-  root.innerHTML='<p role="status">Consultando o servidor…</p>';
+  root.innerHTML=carregamentoPainel('Consultando o servidor');
   try {
     if(section==='atendimento') { await montarAtendimento(root); return; }
     if(section==='historico') {

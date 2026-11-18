@@ -3,6 +3,7 @@ import { esc, moeda, avisar } from './utils.js';
 import { montarAtendimento } from './admin-atendimento.js';
 import { tabelaEquipe, tabelaPedidos, dataEquipe, statusPedido, caminhoLista, controlesLista } from './admin-funcionario.js';
 import {camposFotos,enviarFotos} from './admin-fotos.js';
+import {carregamentoPainel} from './admin-carregamento.js';
 
 const money = value => moeda(Number(value || 0)/100);
 const button = (name,id,title) => `<button class="btn btn--pequeno btn--contorno" type="button" data-${name}="${esc(id)}">${title}</button>`;
@@ -16,7 +17,9 @@ function cardsGestao(items,type) {
   if(!items.length)return '<div class="painel"><div class="painel__corpo">Nenhum registro encontrado.</div></div>';
   return `<div class="admin-card-grid">${items.map(item=>{
     const product=type==='product';
-    return `<article class="admin-item-card"><div class="admin-item-card__top"><span class="admin-tag ${item.active?'admin-tag--active':''}">${item.active?'Ativo':'Inativo'}</span><span class="micro texto-2">${product?'Produto':'Categoria'}</span></div><h2>${esc(item.name)}</h2><p class="micro texto-2">${esc(product?item.sku:item.slug)}</p>${product?`<p class="admin-item-card__category">${esc(item.category?.name||'Sem categoria')}</p><dl class="admin-item-card__values"><div><dt>Preço</dt><dd>${money(item.priceCents)}</dd></div><div><dt>Estoque</dt><dd>${esc(item.stock)} un.</dd></div></dl>`:''}<div class="admin-item-card__actions">${button(`edit-${type}`,item.id,'Editar')}${item.active?button(`disable-${type}`,item.id,'Desativar'):''}</div></article>`;
+    const photo=product?item.images?.[0]?.imageUrl:item.imageUrl;
+    const image=photo?`<img class="admin-item-card__photo" src="${esc(photo.startsWith('public/')?'../'+photo:photo)}" alt="${esc(item.name)}" loading="lazy" decoding="async">`:'<div class="admin-item-card__photo admin-item-card__photo--empty">Sem foto</div>';
+    return `<article class="admin-item-card"><div class="admin-item-card__top"><span class="admin-tag ${item.active?'admin-tag--active':''}">${item.active?'Ativo':'Inativo'}</span><span class="micro texto-2">${product?'Produto':'Categoria'}</span></div>${image}<h2>${esc(item.name)}</h2><p class="micro texto-2">${esc(product?item.sku:item.slug)}</p>${product?`<p class="admin-item-card__category">${esc(item.category?.name||'Sem categoria')}</p><dl class="admin-item-card__values"><div><dt>Preço</dt><dd>${money(item.priceCents)}</dd></div><div><dt>Estoque</dt><dd>${esc(item.stock)} un.</dd></div></dl>`:''}<div class="admin-item-card__actions">${button(`edit-${type}`,item.id,'Editar')}${item.active?button(`disable-${type}`,item.id,'Desativar'):''}</div></article>`;
   }).join('')}</div>`;
 }
 function mount(root,html,actions='') {
@@ -80,7 +83,7 @@ function readCompatibilities(form) {
 }
 
 export async function montarGestao(root,section,refresh) {
-  root.innerHTML='<p role="status">Consultando os dados da loja…</p>';
+  root.innerHTML=carregamentoPainel('Consultando os dados da loja');
   const save=async(path,method,body)=>{await api(path,{method,body});avisar('Alteração salva no servidor.');await refresh();};
   try {
     if(section==='atendimento') { await montarAtendimento(root); return; }

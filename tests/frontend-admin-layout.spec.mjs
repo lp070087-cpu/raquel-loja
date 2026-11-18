@@ -3,8 +3,8 @@ import { mkdir } from 'node:fs/promises';
 
 // Visual/UI regression with explicit API fixtures, never writes to Neon.
 test('gestão limpa, menu prioritário e vitrine mobile em duas colunas', async ({ page }) => {
-  const categories=Array.from({length:4},(_,i)=>({id:`cat-${i}`,name:`Categoria ${i+1}`,slug:`categoria-${i}`,active:true}));
-  const products=Array.from({length:4},(_,i)=>({id:`prod-${i}`,name:`Produto de teste ${i+1}`,sku:`SKU-${i}`,slug:`produto-${i}`,description:'Descrição controlada',priceCents:4590,stock:12,active:true,category:categories[0],categoryId:categories[0].id,images:[],compatibilities:[]}));
+  const categories=Array.from({length:4},(_,i)=>({id:`cat-${i}`,name:`Categoria ${i+1}`,slug:`categoria-${i}`,imageUrl:'public/produtos/pneus/pneu-01.jpg',active:true}));
+  const products=Array.from({length:4},(_,i)=>({id:`prod-${i}`,name:`Produto de teste ${i+1}`,sku:`SKU-${i}`,slug:`produto-${i}`,description:'Descrição controlada',priceCents:4590,stock:12,active:true,category:categories[0],categoryId:categories[0].id,images:[{imageUrl:'public/produtos/pneus/pneu-01.jpg'}],compatibilities:[]}));
   await page.route('**/api/**',async route=>{
     const path=new URL(route.request().url()).pathname;
     const data=path.endsWith('/auth/me')?{user:{name:'Administradora Teste',role:'ADMIN'}}:path.endsWith('/admin/categories')?{categories}:path.endsWith('/admin/products')?{products,total:4}:path.endsWith('/admin/orders')||path.endsWith('/admin/pickups')?{orders:[{id:'order-1',orderNumber:'RAQ-123',user:{name:'Cliente Teste'},createdAt:new Date().toISOString(),totalCents:4590,status:'PENDING',paymentStatus:'PENDING'}],total:1}:{};
@@ -17,6 +17,7 @@ test('gestão limpa, menu prioritário e vitrine mobile em duas colunas', async 
   await expect(page.locator('#atendimento-pedido')).toHaveCount(0);
   await page.locator('[data-secao="produtos"]').click();
   await expect(page.locator('.admin-item-card')).toHaveCount(4);
+  await expect.poll(()=>page.locator('.admin-item-card__photo').first().evaluate(image=>image.complete&&image.naturalWidth>0)).toBe(true);
   await expect(page.locator('#menu-admin a').nth(0)).toHaveAttribute('href','#atendimento');
   await expect(page.locator('#menu-admin a').nth(1)).toHaveAttribute('href','#dashboard');
   await expect(page.locator('#menu-admin a').nth(2)).toHaveAttribute('href','#pedidos');
@@ -35,13 +36,14 @@ test('gestão limpa, menu prioritário e vitrine mobile em duas colunas', async 
   await page.screenshot({path:'evidence/admin-layout/products-1440.png'});
   await page.locator('[data-secao="categorias"]').click();
   await expect(page.locator('.admin-item-card')).toHaveCount(4);
+  await expect.poll(()=>page.locator('.admin-item-card__photo').first().evaluate(image=>image.complete&&image.naturalWidth>0)).toBe(true);
   await page.locator('[data-edit-category]').first().click();
   await expect(page.locator('[name="slug"]')).toHaveValue('categoria-0');
   await page.getByRole('button',{name:'Cancelar',exact:true}).click();
   await page.evaluate(()=>scrollTo(0,0));
   await page.screenshot({path:'evidence/admin-layout/categories-1440.png'});
   await page.locator('[data-secao="pedidos"]').click();
-  await expect(page.getByRole('cell',{name:'RAQ-123',exact:true})).toBeVisible();
+  await expect(page.getByRole('cell',{name:'Pedido RAQ-123',exact:true})).toBeVisible();
   await page.setViewportSize({width:390,height:900});
   await expect(page.getByRole('button',{name:'Ver detalhes'})).toBeVisible();
   await expect(page.getByRole('searchbox')).toBeVisible();
@@ -69,4 +71,19 @@ test('gestão limpa, menu prioritário e vitrine mobile em duas colunas', async 
   await expect.poll(()=>page.locator('.produto-card img').evaluateAll(images=>images.every(image=>image.complete&&image.naturalWidth>0))).toBe(true);
   await page.screenshot({path:'evidence/admin-layout/storefront-430.png'});
   expect(errors).toEqual([]);
+});
+
+test('troca rápida de abas mantém estrutura e ignora resposta da seção anterior',async({page})=>{
+ let release;const pending=new Promise(resolve=>release=resolve);
+ await page.route('**/api/**',async route=>{
+  const path=new URL(route.request().url()).pathname;
+  if(path.endsWith('/admin/products')){await pending;await route.fulfill({json:{products:[],total:0}});return;}
+  const data=path.endsWith('/auth/me')?{user:{name:'Administradora Teste',role:'ADMIN'}}:path.endsWith('/admin/categories')?{categories:[{id:'cat-visible',name:'Categoria visível',slug:'categoria-visivel',active:true}]}:{};
+  await route.fulfill({json:data});
+ });
+ await page.goto('/admin/painel.html');await expect(page.locator('html')).toHaveAttribute('data-admin-ready','true');
+ await page.locator('[data-secao="produtos"]').click();await expect(page.locator('.admin-loading-card')).toHaveCount(4);
+ await page.locator('[data-secao="categorias"]').click();await expect(page.locator('.admin-item-card h2')).toHaveText('Categoria visível');
+ release();await expect(page.locator('#titulo-secao')).toHaveText('Categorias');await expect(page.locator('.admin-item-card h2')).toHaveText('Categoria visível');
+ await page.setViewportSize({width:390,height:900});await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });

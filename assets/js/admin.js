@@ -1,5 +1,6 @@
 import { api } from './api.js';
 import { esc, icone } from './utils.js';
+import {carregamentoPainel} from './admin-carregamento.js';
 
 const adminMenu = [
   ['atendimento','Atendimento','loja'], ['dashboard','Dashboard','painel'], ['pedidos','Pedidos','sacola'], ['retiradas','Retiradas','caixa'],
@@ -14,7 +15,7 @@ export const destinoPorPerfil = user => user?.role === 'ADMIN' ? 'painel.html' :
 export async function montarAdmin() { return montarPainel('ADMIN'); }
 export async function montarPainel(role) {
   const content = document.getElementById('conteudo-admin');
-  content.innerHTML = '<p role="status">Verificando sua sessão…</p>';
+  content.innerHTML = carregamentoPainel('Verificando sua sessão');
   let user;
   try { user = (await api('/auth/me')).user; }
   catch (error) {
@@ -49,8 +50,14 @@ export async function montarPainel(role) {
     document.getElementById('titulo-secao').textContent = section[1];
     document.getElementById('subtitulo-secao').textContent = role === 'ADMIN' ? 'Gestão com dados do servidor e ações identificadas.' : 'Atenda pedidos e acompanhe o histórico das suas operações.';
     const slot = document.createElement('div');
+    slot.innerHTML = carregamentoPainel(`Carregando ${section[1].toLowerCase()}`);
     content.replaceChildren(slot);
-    await render(slot,section[0],draw);
+    window.scrollTo({top:0,behavior:'instant'});
+    try { await render(slot,section[0],draw); }
+    catch(error) {
+      slot.innerHTML=`<div class="mensagem mensagem--erro" role="alert">${esc(error.message)}</div><button class="btn btn--contorno" type="button">Tentar novamente</button>`;
+      slot.querySelector('button').addEventListener('click',draw);
+    }
   };
   document.getElementById('btn-sair').addEventListener('click',async event => {
     const button = event.currentTarget; button.disabled = true;
