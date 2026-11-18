@@ -49,3 +49,9 @@ Prévia atual do atendimento: https://raquel-loja-ew91-qn001cphk-lp070087-5894s-
 ## Próximas informações operacionais
 
 Demais funcionários devem ter contas individuais e permissões concedidas pela administradora; nunca usar as fixtures de testing como acessos reais. Dados comerciais/fiscais confirmados, revisão comercial de preços/estoques, SMTP e política de reembolso continuam pendentes. Entrega permanece desativada até existir configuração e operação próprias.
+
+## Redeploy concluído — 18/11/2026
+
+Autorização específica recebida para migração aditiva de fotos e publicação. Aplicação commit0618aef publicada como dpl_4n2zUEDYLGDtZvpomRtbUAkf14kr, READY, no domínio https://raquel-loja-ew91.vercel.app . Migração20261118010000_catalog_media concluída com checksum844b083f0a0490b7706ba382dd853748b50fc2c4a22f55970ce8175b60a2a684. Produtos/pedidos/usuários preservados; Marquinho sem alterações e importação128ainda apenas testing. Sem push.
+
+Pós-publicação: APIhealth/catálogo/categorias200,ADMINanônimo401,arquivoambiente404. Navegador somente leitura1/1PASS22,1s total, incluindo sete larguras, catálogo real, três categorias, menu mobile, acessos de cliente/equipe e zero erros de script. Evidência evidence/deployment/production-browser/result.json. Não foram executadas compras nem criadas contas de teste em produção. Pendências comerciais, SMTP e integrações locais permanecem descritas no relatório.

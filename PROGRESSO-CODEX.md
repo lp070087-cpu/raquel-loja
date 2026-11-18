@@ -241,3 +241,11 @@ Regressão direcionada após corrigir logins redundantes: somente busca/paginaç
 ## Pedido de commit e redeploy — 17/11/2026
 
 Usuário solicitou commit e redeploy da revisão atual. Frontend: 42 verificações sem falhas; backend compilado novamente. Revisão de segredos identificou apenas URLs fictícias nos três testes de segurança já existentes; nenhum arquivo de ambiente será versionado. A nova versão exige a migração aditiva 20261118010000_catalog_media, atualmente aplicada somente em testing. Antes de publicar em produção, falta autorização específica para adicionar Category.imageUrl e MediaAsset, sem exclusão de dados. A importação dos 128 produtos permanece somente em testing; não copiar clientes/pedidos/sessões de teste.
+
+## Publicação autorizada — 18/11/2026
+
+Usuário autorizou expressamente a nova migração e publicação. Commit de aplicação: 0618aef. Migração 20261118010000_catalog_media aplicada em transação somente na branch production br-lucky-art-b6u83tc8, com guarda de identidade, limite de bloqueio e registro do checksum versionado. Somente adições Category.imageUrl e MediaAsset; nenhuma exclusão. Conferência após migração preservou 23 produtos, um pedido e um usuário. Catálogo Marquinho não importado em produção; origem intacta.
+
+Deploy de produção READY: dpl_4n2zUEDYLGDtZvpomRtbUAkf14kr. URL oficial https://raquel-loja-ew91.vercel.app . Deployment https://raquel-loja-ew91-9unomp1ww-lp070087-5894s-projects.vercel.app . Nenhum push realizado.
+
+Verificação pública: health/produtos/categorias HTTP200; ADMIN anônimo401; backend/.env404. Playwright somente leitura APROVADO1/1 em19,3s (22,1s total), umworker: catálogo real, três categorias, sete larguras sem overflow, menu mobile fecha ao abrir Minha Conta, login cliente e equipe disponíveis, nenhum erro de script. Nenhum usuário ou pedido de teste criado em produção. Capturas/resultado: evidence/deployment/production-browser/. As limitações anteriores das42integraçõeslocais permanecem registradas, sem nova aprovação implícita.
