@@ -86,6 +86,11 @@ test('Vercel + Neon testing: cadastro, compra, pagamento e retirada reais',async
  for(const [label,value]of [['Nome completo','Cliente Cloud Teste'],['E-mail',email],['Telefone','11900000000'],['Senha',secret]])await page.getByLabel(label,{exact:true}).fill(value);
  const registered=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/auth/register'&&r.request().method()==='POST');await page.getByRole('button',{name:'Criar conta',exact:true}).click();expect((await registered).status()).toBe(201);await expect(page.locator('.conta-nav')).toBeVisible();
  expect((await context.cookies(base+'/api/')).some(c=>/session/i.test(c.name)&&c.httpOnly&&c.secure)).toBe(true);
+ for(const name of ['overview','profile','addresses','motorcycles','favorites','orders','security']){
+   await page.locator(`.conta-nav [data-section="${name}"]`).click();await expect(page.locator('[data-body] .conta-skeleton')).toHaveCount(0);await expect(page.locator('[data-message][data-error="true"]')).toHaveCount(0);
+   if(visibleDemo){await page.evaluate(()=>scrollTo({top:document.documentElement.scrollHeight,behavior:'smooth'}));await page.waitForTimeout(1000);}
+   console.log('Seção do cliente verificada: '+name);
+ }
  await demonstrate(page,'1 — conta do cliente criada');
  await page.goto('/produto?id='+fixture.productId,{waitUntil:'domcontentloaded'});await expect(page.locator('#btn-adicionar')).toBeVisible();
  const added=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/cart/items/'+fixture.productId&&r.request().method()==='PUT');await page.locator('#btn-adicionar').click();expect((await added).status()).toBe(200);
@@ -95,6 +100,8 @@ test('Vercel + Neon testing: cadastro, compra, pagamento e retirada reais',async
  const placed=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/orders'&&r.request().method()==='POST');await page.locator('#btn-finalizar').click({noWaitAfter:true});const response=await placed;expect(response.status()).toBe(201);await expect(page).toHaveURL(/\/pedido(?:\.html)?\?id=/);await expect(page.locator('.codigo-retirada')).toBeVisible();const {order}=await browserApi(page,'/orders/'+new URL(page.url()).searchParams.get('id'));expect(order.paymentStatus).toBe('PENDING');expect(order.pickupCode).toMatch(/^\d{5}$/);await expect(page.locator('body')).toContainText(order.pickupCode);await page.screenshot({path:folder+'/customer-order-390.png'});
  await demonstrate(page,'3 — pedido confirmado: código de retirada e pagamento pendente');
  await browserApi(page,'/auth/logout','POST');await loginEmployee(page,fixture.admin,'ADMIN');if(!visibleDemo)await page.setViewportSize({width:1440,height:950});
+ expect((await browserApi(page,'/admin/orders?q='+encodeURIComponent(fixture.prefix)+'&status=PENDING')).orders.some(o=>o.id===order.id)).toBe(true);
+ expect((await browserApi(page,'/admin/orders?q='+encodeURIComponent('Cliente Cloud Teste'))).orders.some(o=>o.id===order.id)).toBe(true);
  for(const name of ['Confirmar preparação','Marcar pronto para retirada']){await section(page,'pedidos');await page.locator(`[data-order="${order.id}"]`).click();await page.getByRole('button',{name,exact:true}).click();await password(page,fixture.admin.password);await submit(page,'/admin/orders/'+order.id+'/status');}
  await browserApi(page,'/auth/logout','POST');await loginEmployee(page,fixture.staff,'STAFF');if(!visibleDemo)await page.setViewportSize({width:390,height:950});
  expect(await apiStatus(page,'/admin/products')).toBe(403);expect(await apiStatus(page,'/orders/'+order.id)).toBe(404);
