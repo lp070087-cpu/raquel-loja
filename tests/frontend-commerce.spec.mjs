@@ -2,6 +2,13 @@ import { test, expect } from '../backend/node_modules/@playwright/test/index.mjs
 import { PRODUTOS, CATEGORIAS } from '../assets/js/dados.js';
 test.setTimeout(90000);
 
+test('erro de sincronização não vira carrinho vazio e recarregar recupera itens — API MOCKED',async({page})=>{
+ const state=await mockCommerce(page);state.items=[{productId:product.id,quantity:2}];let failure=true;
+ await page.route('**/api/favorites',async route=>{if(!failure)return route.fallback();failure=false;await route.fulfill({status:503,json:{message:'Falha temporária controlada'},headers:{'access-control-allow-origin':'http://127.0.0.1:8000','access-control-allow-credentials':'true'}});});
+ await page.goto('/carrinho.html');await expect(page.getByRole('alert')).toContainText('Seus itens não foram apagados');await expect(page.getByRole('heading',{name:'Seu carrinho está vazio',exact:true})).toHaveCount(0);expect(state.items[0].quantity).toBe(2);
+ await page.getByRole('button',{name:'Carregar carrinho novamente',exact:true}).click();await expect(page.locator('[data-qtd]')).toHaveValue('2');await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
 // Explicit HTTP mocks: these tests exercise the browser UI and API contract,
 // not PostgreSQL persistence or backend authorization.
 const product = { ...PRODUTOS[0], active: true, priceCents: 10000, stock: 8, preco: 100, estoque: 8 };

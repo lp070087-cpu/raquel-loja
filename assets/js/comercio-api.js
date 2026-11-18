@@ -60,7 +60,6 @@ export async function sincronizarConta(anonimos = [], favoritosAnonimos = [], co
   const versao = geracao;
   await api('/auth/me');
   if (versao !== geracao) return false;
-  conta = true;
   if (anonimos.length) {
     await api('/cart/merge', { method: 'POST', body: { mergeKey: obterChaveMescla(), items: anonimos.map(i => ({ productId: i.id, quantity: i.qtd })) } });
     confirmado.carrinho?.();
@@ -74,6 +73,7 @@ export async function sincronizarConta(anonimos = [], favoritosAnonimos = [], co
   }
   const [cart, favorites] = await Promise.all([api('/cart'), api('/favorites')]);
   if (versao !== geracao) return false;
+  conta = true;
   cesta = itensResposta(cart);
   salvos = favoritosResposta(favorites);
   avisar();

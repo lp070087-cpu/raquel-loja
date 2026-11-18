@@ -1,5 +1,12 @@
 import {test,expect} from '../backend/node_modules/@playwright/test/index.mjs';
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
+import {ponteiroDemonstracao} from './helpers/demo-pointer.mjs';
+const network=new WeakMap();
+test.beforeEach(async({page})=>{
+ await ponteiroDemonstracao(page);const events=[];network.set(page,events);
+ page.on('response',r=>{const url=new URL(r.url());if(url.pathname.startsWith('/api/'))events.push({path:url.pathname,status:r.status()});});
+ page.on('requestfailed',r=>{const url=new URL(r.url());if(url.pathname.startsWith('/api/'))events.push({path:url.pathname,error:r.failure()?.errorText});});
+});
 import {createFixture,retireFixture,browserApi,apiStatus,section,password,submit} from './helpers/real-panels.mjs';
 const base=process.env.RAQUEL_PREVIEW_URL,visibleDemo=process.env.RAQUEL_DEMO_VISIBLE==='1',folder=visibleDemo?'evidence/deployment/cloud-desktop':'evidence/deployment/cloud';let fixture,access;
 async function demonstrate(page,label){
@@ -44,7 +51,7 @@ for(const [round,method] of [[1,'PIX'],[2,'CARD']])test(`rodada adicional ${roun
  }
  const removed=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/cart/items/'+second.id&&r.request().method()==='PUT'&&r.request().postDataJSON()?.quantity===0);
  await row(second.id).locator('[data-remover]').click();expect((await removed).status()).toBe(200);await expect(page.locator('.item-carrinho')).toHaveCount(1);
- await page.reload();await expect(row(first.id).locator('[data-qtd]')).toHaveValue('2');
+ const reloadedCart=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/cart'&&r.request().method()==='GET');await page.reload();expect((await reloadedCart).status()).toBe(200);await expect(row(first.id).locator('[data-qtd]')).toHaveValue('2');
  await page.goto('/produto?id='+second.id,{waitUntil:'domcontentloaded'});await add(second.id);
  await page.goto('/carrinho',{waitUntil:'domcontentloaded'});await expect(page.locator('.item-carrinho')).toHaveCount(2);
  await page.locator('#campo-cupom').fill('INVALIDO-RODADA-'+round);await page.locator('#form-cupom button').click();await expect(page.locator('#caixa-avisos')).toContainText(/cupom|válido|disponível/i);
@@ -72,7 +79,7 @@ for(const [round,method] of [[1,'PIX'],[2,'CARD']])test(`rodada adicional ${roun
  await writeFile(`${folder}/round-${round}-result.json`,JSON.stringify({passed:true,realNeonTesting:true,previewUrl:base,method,search:true,favorites:true,multipleItems:true,increasedAndDecreased:true,removedAndReadded:true,cartPersistedAfterReload:true,invalidCoupon:true,serverTotal:true,codeOnlyLookup:true,pickup:true,duplicatePickupDenied:true,customerUpdated:true,productionWrites:false,scriptErrors:errors},null,2));
 });
 test.afterAll(async()=>{if(fixture)await retireFixture(fixture);});
-test.afterEach(async({page})=>{await page.locator('input[type="password"]').evaluateAll(inputs=>inputs.forEach(input=>{input.value='';input.removeAttribute('value');}));});
+test.afterEach(async({page},info)=>{await page.locator('input[type="password"]').evaluateAll(inputs=>inputs.forEach(input=>{input.value='';input.removeAttribute('value');}));if(info.status!==info.expectedStatus){await mkdir(folder,{recursive:true});await writeFile(folder+'/network-failure-'+Date.now()+'.json',JSON.stringify({test:info.title,requests:network.get(page)||[]},null,2));}});
 async function loginEmployee(page,user,role){
  await page.goto('/admin/login',{waitUntil:'domcontentloaded'});await expect(page.locator('#form-login')).toHaveAttribute('data-auth-ready','true');
  await page.getByLabel('E-mail',{exact:true}).fill(user.email);await page.getByLabel('Senha',{exact:true}).fill(user.password);await page.getByRole('button',{name:'Entrar no painel',exact:true}).click({noWaitAfter:true});

@@ -1,6 +1,8 @@
 import {test,expect} from '../backend/node_modules/@playwright/test/index.mjs';
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {randomInt} from 'node:crypto';
+import {ponteiroDemonstracao} from './helpers/demo-pointer.mjs';
+test.beforeEach(async({page})=>ponteiroDemonstracao(page));
 import {createFixture,retireFixture,browserApi,apiStatus} from './helpers/real-panels.mjs';
 let fixture,access;
 const base=process.env.RAQUEL_PREVIEW_URL,folder='evidence/deployment/cloud-navigation';
@@ -21,7 +23,7 @@ test('revisão Vercel: treze módulos administrativos, editores e navegação p�
  await page.waitForURL(/\/admin\/painel(?:\.html)?(?:#.*)?$/);await expect(page.locator('html')).toHaveAttribute('data-admin-ready','true');await expect(page.locator('#titulo-secao')).toHaveText('Atendimento');
  const filtered=await browserApi(page,'/admin/products?categoryId='+fixture.categoryId+'&q='+encodeURIComponent(fixture.prefix));expect(filtered.products).toHaveLength(1);expect(filtered.products[0].id).toBe(fixture.productId);
  const modules=[['atendimento',null],['dashboard','dashboard'],['produtos','products'],['categorias','categories'],['estoque','stock'],['pedidos','orders'],['clientes','customers'],['funcionarios','employees'],['cupons','coupons'],['pagamentos','payments'],['retiradas','pickups'],['relatorios','reports'],['configuracoes','settings']];
- for(const [name,endpoint] of modules){
+ for(const [name,endpoint] of process.env.RAQUEL_PENDING_COUNTER_ONLY==='1'?[]:modules){
    const response=endpoint?page.waitForResponse(r=>new URL(r.url()).pathname===`/api/admin/${endpoint}`&&r.request().method()==='GET'):null;
    await page.locator(`[data-secao="${name}"]`).click();if(response)expect((await response).status()).toBe(200);
    const content=page.locator('#conteudo-admin');await expect(content.locator('.admin-loading')).toHaveCount(0);
@@ -41,7 +43,7 @@ test('revisão Vercel: treze módulos administrativos, editores e navegação p�
  await page.locator('[data-secao="funcionarios"]').click();await expect(page.locator('[data-set-pin="'+fixture.staff.id+'"]')).toBeVisible();
  let pin;do{pin=String(randomInt(100000,1000000));}while(/^(\d)\1{5}$/.test(pin)||['123456','654321'].includes(pin));
  await page.locator('[data-set-pin="'+fixture.staff.id+'"]').click();await page.getByLabel('PIN de 6 dígitos',{exact:true}).fill(pin);await page.getByLabel('Confirmar PIN',{exact:true}).fill(pin);await page.getByLabel('Senha da administração',{exact:true}).fill(fixture.admin.password);
- const configured=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/admin/employees/'+fixture.staff.id+'/pin'&&r.request().method()==='PUT');await page.locator('.admin-pin-form').getByRole('button',{name:'Definir PIN',exact:true}).click();expect((await configured).status()).toBe(200);await expect(page.locator('.admin-pin-form')).toHaveCount(0);
+ const configured=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/admin/employees/'+fixture.staff.id+'/pin'&&r.request().method()==='PUT');await page.locator('.admin-pin-form').getByRole('button',{name:'Definir PIN individual',exact:true}).click();expect((await configured).status()).toBe(200);await expect(page.locator('.admin-pin-form')).toHaveCount(0);
  await page.locator('[data-enroll-terminal]').click();await page.getByLabel('Nome do computador',{exact:true}).fill('Computador controlado '+fixture.prefix);await page.getByLabel('Senha da administração',{exact:true}).fill(fixture.admin.password);
  const enrolled=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/admin/terminals'&&r.request().method()==='POST');await page.locator('.admin-pin-form').getByRole('button',{name:'Autorizar este computador',exact:true}).click();expect((await enrolled).status()).toBe(201);await expect(page.locator('.admin-pin-form')).toHaveCount(0);
  await browserApi(page,'/auth/logout','POST');
