@@ -35,7 +35,7 @@
    ============================================================================ */
 
 export const LOJA = {
-  nome: 'Moto Peças',                 // placeholder — troque quando houver marca
+  nome: 'RM Motos',                   // padrão; o painel pode trocar em Configurações
   slogan: 'Peças e acessórios para sua moto',
   cidade: 'Olinda',
   estado: 'PE',

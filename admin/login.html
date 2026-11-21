@@ -2,12 +2,12 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="referrer" content="no-referrer">
-<title>Acesso da equipe — Moto Peças</title><meta name="description" content="Acesso individual da administração e equipe do balcão."><meta name="theme-color" content="#0C1425">
+<title>Acesso da equipe — RM Motos</title><meta name="description" content="Acesso individual da administração e equipe do balcão."><meta name="theme-color" content="#0C1425">
 <link rel="stylesheet" href="../assets/css/tokens.css"><link rel="stylesheet" href="../assets/css/app.css"><link rel="stylesheet" href="../assets/css/admin.css">
 </head>
 <body class="tela-admin" data-raiz="..">
 <div class="login-tela"><div class="login-tela__formas" aria-hidden="true"><span></span><span></span></div><div class="login-caixa">
-<a class="marca" href="../index.html"><span class="marca__simbolo" id="simbolo-marca"></span><span class="marca__texto"><span class="marca__nome">Moto Peças</span><span class="marca__tag">Peças e acessórios</span></span></a>
+<a class="marca" href="../index.html"><span class="marca__simbolo" id="simbolo-marca"></span><span class="marca__texto"><span class="marca__nome">RM Motos</span><span class="marca__tag">Peças e acessórios</span></span></a>
 <div class="login-caixa__marca"><div><h1>Acesso da equipe</h1><p class="texto-2 pequeno">Entre com seu e-mail e sua senha individual.</p></div></div>
 <form id="form-login" method="post">
 <div class="campo"><label class="campo__rotulo" for="usuario">E-mail</label><input class="entrada" id="usuario" name="email" type="email" required maxlength="254" autocomplete="username" placeholder="Seu e-mail de acesso"></div>
@@ -23,7 +23,12 @@ import { api } from '../assets/js/api.js';
 import { icone } from '../assets/js/utils.js';
 import { destinoPorPerfil } from '../assets/js/admin.js';
 import {montarLoginBalcao} from '../assets/js/admin-balcao.js';
-document.getElementById('simbolo-marca').innerHTML = icone('moto',26);
+import {LOJA} from '../assets/js/dados.js';
+import {carregarLoja} from '../assets/js/loja-api.js';
+import {aplicarMarca} from '../assets/js/marca.js';
+const marcaLogin=document.querySelector('.login-caixa .marca, .marca');
+aplicarMarca(marcaLogin, LOJA.nome);
+carregarLoja().then(()=>aplicarMarca(marcaLogin, LOJA.nome));
 const form=document.getElementById('form-login'), feedback=document.getElementById('erro-login');
 const state=new URLSearchParams(location.search).get('acesso');
 if(state==='negado') feedback.textContent='Esta conta não tem autorização para acessar os painéis da equipe.';

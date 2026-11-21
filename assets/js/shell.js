@@ -13,6 +13,7 @@ import { icone, esc, $, $$, avisar } from './utils.js';
 import { carrinho, favoritos, moto as motoStore, aguardarSincronizacao } from './carrinho.js';
 import { htmlMotoHeader, htmlMotoAtiva } from './localizador.js';
 import {carregarLoja} from './loja-api.js';
+import {htmlSimbolo, htmlNome} from './marca.js';
 
 export const MENU = [
   { id: 'inicio',      rotulo: 'Início',            href: 'index.html' },
@@ -56,9 +57,9 @@ function htmlHeader(pagina, raiz) {
 <header class="header" id="cabecalho">
   <div class="container">
     <a class="marca" href="${p}index.html" aria-label="${esc(LOJA.nome)} — página inicial">
-      <span class="marca__simbolo">${icone('moto', 23)}</span>
+      <span class="marca__simbolo">${htmlSimbolo(LOJA.nome)}</span>
       <span class="marca__texto">
-        <span class="marca__nome">${esc(LOJA.nome)}</span>
+        <span class="marca__nome">${htmlNome(LOJA.nome)}</span>
         <span class="marca__tag">Peças e acessórios</span>
       </span>
     </a>
@@ -92,8 +93,8 @@ function htmlHeader(pagina, raiz) {
 <div class="menu-mobile" id="menu-mobile" data-aberto="false" aria-hidden="true">
   <div class="menu-mobile__topo">
     <a class="marca" href="${p}index.html">
-      <span class="marca__simbolo">${icone('moto', 23)}</span>
-      <span class="marca__nome">${esc(LOJA.nome)}</span>
+      <span class="marca__simbolo">${htmlSimbolo(LOJA.nome)}</span>
+      <span class="marca__nome">${htmlNome(LOJA.nome)}</span>
     </a>
     <button class="icone-btn" type="button" data-fechar-menu aria-label="Fechar menu">${icone('fechar')}</button>
   </div>
@@ -129,9 +130,9 @@ function htmlFooter(raiz) {
     <div class="footer__grade">
       <div>
         <a class="marca" href="${p}index.html">
-          <span class="marca__simbolo">${icone('moto', 23)}</span>
+          <span class="marca__simbolo">${htmlSimbolo(LOJA.nome)}</span>
           <span class="marca__texto">
-            <span class="marca__nome">${esc(LOJA.nome)}</span>
+            <span class="marca__nome">${htmlNome(LOJA.nome)}</span>
             <span class="marca__tag">Peças e acessórios</span>
           </span>
         </a>
@@ -188,6 +189,7 @@ function htmlBarraMobile(pagina, raiz) {
 export async function montarShell({ pagina = '', raiz = '.', titulo } = {}) {
   await carregarLoja();
   if (titulo) document.title = `${titulo} — ${LOJA.nome}`;
+  else document.title = document.title.replace('RM Motos', LOJA.nome);
 
   const topo = document.getElementById('topo');
   const rodape = document.getElementById('rodape');

@@ -35,6 +35,7 @@
 .admin__marca { display: flex; align-items: center; gap: .7em; padding-inline: var(--e2); }
 .admin__marca .marca__simbolo { background: var(--amarelo); color: var(--marinho); }
 .admin__marca .marca__nome { color: var(--branco); font-size: 1.06rem; }
+.admin__marca .marca__resto { color: var(--amarelo); }
 .admin__marca .marca__tag { color: rgba(255,255,255,.55); }
 
 .admin__menu { display: flex; flex-direction: column; gap: 3px; flex: 1; }

@@ -1,6 +1,9 @@
 import { api } from './api.js';
 import { esc, icone } from './utils.js';
 import {carregamentoPainel} from './admin-carregamento.js';
+import {LOJA} from './dados.js';
+import {carregarLoja} from './loja-api.js';
+import {aplicarMarca} from './marca.js';
 
 const adminMenu = [
   ['atendimento','Atendimento','loja'], ['dashboard','Dashboard','painel'], ['pedidos','Pedidos','sacola'], ['retiradas','Retiradas','caixa'],
@@ -32,7 +35,8 @@ export async function montarPainel(role) {
     : (await import('./admin-funcionario.js')).montarFuncionario;
   // Old presentation flags never authorize the real panel.
   try { sessionStorage.removeItem('motopecas-admin-sessao'); } catch {}
-  document.getElementById('simbolo-admin').innerHTML = icone('moto',23);
+  aplicarMarca(document.querySelector('.admin__marca'), LOJA.nome);
+  carregarLoja().then(() => aplicarMarca(document.querySelector('.admin__marca'), LOJA.nome));
   document.querySelector('.admin__usuario .forte').textContent = user.name;
   document.querySelector('.admin__usuario .micro').textContent = role === 'ADMIN' ? 'Administradora · sessão individual' : 'Funcionário · sessão individual';
   const avatar = document.querySelector('.admin__usuario .avaliacao__avatar');

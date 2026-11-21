@@ -16,7 +16,7 @@
 
 import {
   CATEGORIAS, PRODUTOS, GRUPOS, produtoServeEm, ehUniversal, rotuloMoto,
-  categoriaPorSlug,
+  categoriaPorSlug, LOJA,
 } from './dados.js';
 import {
   icone, esc, moeda, prepararRevelar, cascata, temDesconto, descontoPct,
@@ -234,7 +234,7 @@ function desenharTitulo(e, moto, quantidade) {
   if (t) t.textContent = titulo;
   if (s) s.textContent = sub;
   if (m) m.textContent = titulo;
-  document.title = `${titulo} — Moto Peças`;
+  document.title = `${titulo} — ${LOJA.nome}`;
 
   if (sec) sec.innerHTML = moto ? htmlMotoAtiva(moto) : '';
 }
